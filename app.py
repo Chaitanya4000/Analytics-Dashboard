@@ -19,7 +19,6 @@ def generatefilters():
 
 '''
 def buildgraph():
-
     #Print output values
     print("ExcelFilePath: "+str(FilePath.get()))
     print("ColumnName1: " + str(ColumnName1.get()))
@@ -28,7 +27,6 @@ def buildgraph():
     print("ColumnName2: " + str(ColumnName2.get()))
     print(DefaultValueFilter2.get())
     print(DefaultValueBG2.get())
-
     #Initialize Variables:
     str_ExcelFilepath = str(FilePath.get())
     str_ColumnName1 = ColumnName1.get()
@@ -37,19 +35,15 @@ def buildgraph():
     str_FilterValue2 = DefaultValueFilter2.get()
     str_GraphValue1 = DefaultValueBG1.get()
     str_GraphValue2 = DefaultValueBG2.get()
-
     #Build Graph1:
     # If Column Name is not blank, generate graph:
     if (str_ColumnName1 != "") :
-
         #Preprocess the data
         data = pd.read_excel(str_ExcelFilepath)
         UniqueValuesCount1 = pd.value_counts(data[str_ColumnName1])
         UniqueValues1 = data[str_ColumnName1].dropna().unique().tolist()
         str_graphname1 = str(datetime.now()).replace(":",".").replace(" ",".").replace("-",".")+"_Graph1.PNG"
-
         # Generate the garph
-
         if (str_GraphValue1 == "PieChart"):
             plt.style.use("fivethirtyeight")
             slices = UniqueValuesCount1
@@ -59,7 +53,6 @@ def buildgraph():
             plt.tight_layout()
             plt.savefig(str_graphname1)
             plt.clf()
-
         elif(str_GraphValue1 == "BarGraph"):
             plt.bar(UniqueValues1, UniqueValuesCount1)
             plt.title("Graph1 as per " + str_FilterValue1)
@@ -69,19 +62,13 @@ def buildgraph():
             plt.rcParams['figure.figsize'] = (20,20)
             plt.savefig(str_graphname1)
             plt.clf()
-
-
-
     if (str_ColumnName2 != "") :
-
         #Preprocess the data
         data = pd.read_excel(str_ExcelFilepath)
         UniqueValuesCount2 = pd.value_counts(data[str_ColumnName2])
         UniqueValues2 = data[str_ColumnName2].dropna().unique().tolist()
         str_graphname2 = str(datetime.now()).replace(":",".").replace(" ",".").replace("-",".") + "_Graph2.PNG"
-
         # Generate the garph
-
         if (str_GraphValue2 == "PieChart"):
             plt.style.use("fivethirtyeight")
             slices = UniqueValuesCount2
@@ -91,7 +78,6 @@ def buildgraph():
             plt.tight_layout()
             plt.savefig(str_graphname2)
             plt.clf()
-
         elif(str_GraphValue2 == "BarGraph"):
             plt.bar(UniqueValues2, UniqueValuesCount2)
             plt.title("Graph2 as per " + str_FilterValue2)
@@ -101,7 +87,6 @@ def buildgraph():
             plt.rcParams['figure.figsize'] = (20, 20)
             plt.savefig(str_graphname2)
             plt.clf()
-
         elif(str_GraphValue2 == "WordCloud"):
             pass
 '''
@@ -109,21 +94,21 @@ def buildgraph():
 
 def openNewWindow():
 
+    #Get list of all columns in excel
     print("ExcelFilePath: " + str(FilePath.get()))
     str_ExcelFilepath = str(FilePath.get())
     data = pd.read_excel(str_ExcelFilepath)
     Li_ColumnNames = data.columns
 
 
-    # Toplevel object which will
-    # be treated as a new window
+    # Building a new window
     newWindow = Toplevel()
 
 
     # sets the geometry of toplevel
-    newWindow.geometry("700x600")
-    newWindow.maxsize(700, 600)
-    newWindow.minsize(700, 600)
+    newWindow.geometry("1200x700")
+    newWindow.maxsize(1200, 700)
+    newWindow.minsize(1200, 700)
 
     newWindow.title("Analytics Dashboard by T-systems")
     newWindow.configure(background="black")
@@ -135,9 +120,9 @@ def openNewWindow():
     newWindow_canvas.create_image(0, 0, image=image1, anchor="nw")
 
     # build title and project name
-    newWindow_canvas.create_text(400, 35, text="Analytics Dashboard", font=("comicssansns", 20, "bold"), fill='White')
+    newWindow_canvas.create_text(550, 35, text="Analytics Dashboard", font=("comicssansns", 20, "bold"), fill='White')
     LogoImg = ImageTk.PhotoImage(Image.open("TSysLogo.PNG"))
-    newWindow_canvas.create_image(400, 100, image=LogoImg)
+    newWindow_canvas.create_image(550, 100, image=LogoImg)
 
     # Add separator line
     newWindow_canvas.create_line(1, 150, 1360, 150, fill="#fb0")
@@ -146,37 +131,38 @@ def openNewWindow():
     newWindow_canvas.create_text(85, 170, text="Choose Column Name:", font=("comicssansns", 10, "bold"), fill='White')
 
     x = 1
-    int_Rowcounter = 20
+    int_Rowcounter = 220
+    int_ColumnCounter = 100
+    int_Dropdowncounter = 0
     BGOptions1 = ["PieChart", "BarGraph", "WordCloud"]
-    int_Dropdowncounter = 100
 
 
     for i in Li_ColumnNames:
-        print(i)
-
 
 
         varx = IntVar()
-        Checkbutton(newWindow_canvas, text=i, variable=varx).grid(row=int_Rowcounter, column=7, padx= 2, sticky=W)
-
-
+        Chk_Button = Checkbutton(newWindow_canvas, text=i, variable=varx, width=20)
+        newWindow_canvas.create_window(int_ColumnCounter, int_Rowcounter, window=Chk_Button)
         DefaultValueBG1 = StringVar(newWindow)
         DefaultValueBG1.set(BGOptions1[0])
 
         BGOption1 = OptionMenu(newWindow, DefaultValueBG1, *BGOptions1)
         BGOption1.config(width=8, font=('Helvetica', 10))
-        newWindow_canvas.create_window(175, int_Dropdowncounter, window=BGOption1)
+        newWindow_canvas.create_window(int_ColumnCounter+180, int_Rowcounter , window=BGOption1)
 
         x = x + 1
-        int_Rowcounter = int_Rowcounter + 2
+        int_Rowcounter = int_Rowcounter + 50
         int_Dropdowncounter = int_Dropdowncounter + 50
+        if (x==10) :
+            int_ColumnCounter = int_ColumnCounter+500
+            int_Rowcounter = 220
+
 
     newWindow.mainloop()
     app_root.destroy()
+
 #>>>>>>>>>>>>>>>>>>>> Build Main Application <<<<<<<<<<<<<<<<<<<<<<<<<<
 app_root = Tk()
-
-
 
 #GUI Framework
 app_root.geometry("500x400")
@@ -212,10 +198,7 @@ def file_opener():
         parent=app_root,
         initialdir='/',
         initialfile='tmp',
-        filetypes=[
-            ("PNG", "*.png"),
-            ("JPEG", "*.jpg"),
-            ("All files", "*")])
+        filetypes=[("All files", "*")])
     print(rep)
 
 
@@ -249,65 +232,42 @@ app_canvas.create_line(1, 355, 1360, 355,fill="#fb0")
 
 '''
 #Build Filter Options
-
 FilterOptions1 = ["Priority","Impact","Region","Day","Generic"]
-
 FilterOptions2 = ["Priority","Impact","Region","Day","Generic"]
-
 DefaultValueFilter1 = StringVar(app_root)
 DefaultValueFilter1.set(FilterOptions1[0])
-
 DefaultValueFilter2 = StringVar(app_root)
 DefaultValueFilter2.set(FilterOptions2[0])
-
 #Build filter1
-
 app_canvas.create_text(97,250,text="Enter First Graph Details:",font=("comicssansns",10,"bold"),fill='White')
-
 ColumnName1 = Entry (app_root)
 app_canvas.create_window(80, 278, window=ColumnName1)
-
 FilterOption1 = OptionMenu(app_root,DefaultValueFilter1, *FilterOptions1)
 FilterOption1.config(width=8, font=('Helvetica', 10))
 app_canvas.create_window(75, 314, window=FilterOption1)
-
 #Build filter2
-
 app_canvas.create_text(375,250,text="Enter Second Graph Details:",font=("comicssansns",10,"bold"),fill='White')
-
 ColumnName2 = Entry (app_root)
 app_canvas.create_window(350, 275, window=ColumnName2)
-
 FilterOption2 = OptionMenu(app_root,DefaultValueFilter2, *FilterOptions2)
 FilterOption2.config(width=8, font=('Helvetica', 10))
 app_canvas.create_window(345, 315, window=FilterOption2)
-
 #Build Graph Options
-
 BGOptions1 = ["PieChart","BarGraph","WordCloud"]
-
 BGOptions2 = ["PieChart","BarGraph","WordCloud"]
-
 DefaultValueBG1 = StringVar(app_root)
 DefaultValueBG1.set(BGOptions1[0])
-
 DefaultValueBG2 = StringVar(app_root)
 DefaultValueBG2.set(BGOptions2[0])
-
 #Build Graph dropdowns
-
 BGOption1 = OptionMenu(app_root,DefaultValueBG1, *BGOptions1)
 BGOption1.config(width=8, font=('Helvetica', 10))
 app_canvas.create_window(75, 360, window=BGOption1)
-
 BGOption2 = OptionMenu(app_root,DefaultValueBG2, *BGOptions2)
 BGOption2.config(width=8, font=('Helvetica', 10))
 app_canvas.create_window(345, 360, window=BGOption2)
-
 #Add separator line
 app_canvas.create_line(1, 390, 1360, 390,fill="#fb0")
-
-
 # Add Submit button
 SubmitBtn = Button(app_root,text='< < < Submit > > >',command=buildgraph)
 SubmitBtn_window = app_canvas.create_window(220,450,window=SubmitBtn)
