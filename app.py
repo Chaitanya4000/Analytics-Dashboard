@@ -1,6 +1,7 @@
 from tkinter import *
 from PIL import ImageTk,Image
 import time
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -105,8 +106,77 @@ def buildgraph():
             pass
 '''
 
+
+def openNewWindow():
+
+    print("ExcelFilePath: " + str(FilePath.get()))
+    str_ExcelFilepath = str(FilePath.get())
+    data = pd.read_excel(str_ExcelFilepath)
+    Li_ColumnNames = data.columns
+
+
+    # Toplevel object which will
+    # be treated as a new window
+    newWindow = Toplevel()
+
+
+    # sets the geometry of toplevel
+    newWindow.geometry("700x600")
+    newWindow.maxsize(700, 600)
+    newWindow.minsize(700, 600)
+
+    newWindow.title("Analytics Dashboard by T-systems")
+    newWindow.configure(background="black")
+
+    # Add backgroundImage
+    image1 = ImageTk.PhotoImage(Image.open("BgImg.PNG"))
+    newWindow_canvas = Canvas(newWindow, width=1080, height=2160)
+    newWindow_canvas.pack(fill="both", expand=True)
+    newWindow_canvas.create_image(0, 0, image=image1, anchor="nw")
+
+    # build title and project name
+    newWindow_canvas.create_text(400, 35, text="Analytics Dashboard", font=("comicssansns", 20, "bold"), fill='White')
+    LogoImg = ImageTk.PhotoImage(Image.open("TSysLogo.PNG"))
+    newWindow_canvas.create_image(400, 100, image=LogoImg)
+
+    # Add separator line
+    newWindow_canvas.create_line(1, 150, 1360, 150, fill="#fb0")
+
+    # build label Column Name
+    newWindow_canvas.create_text(85, 170, text="Choose Column Name:", font=("comicssansns", 10, "bold"), fill='White')
+
+    x = 1
+    int_Rowcounter = 20
+    BGOptions1 = ["PieChart", "BarGraph", "WordCloud"]
+    int_Dropdowncounter = 100
+
+
+    for i in Li_ColumnNames:
+        print(i)
+
+
+
+        varx = IntVar()
+        Checkbutton(newWindow_canvas, text=i, variable=varx).grid(row=int_Rowcounter, column=7, padx= 2, sticky=W)
+
+
+        DefaultValueBG1 = StringVar(newWindow)
+        DefaultValueBG1.set(BGOptions1[0])
+
+        BGOption1 = OptionMenu(newWindow, DefaultValueBG1, *BGOptions1)
+        BGOption1.config(width=8, font=('Helvetica', 10))
+        newWindow_canvas.create_window(175, int_Dropdowncounter, window=BGOption1)
+
+        x = x + 1
+        int_Rowcounter = int_Rowcounter + 2
+        int_Dropdowncounter = int_Dropdowncounter + 50
+
+    newWindow.mainloop()
+    app_root.destroy()
 #>>>>>>>>>>>>>>>>>>>> Build Main Application <<<<<<<<<<<<<<<<<<<<<<<<<<
 app_root = Tk()
+
+
 
 #GUI Framework
 app_root.geometry("500x400")
@@ -117,14 +187,14 @@ app_root.title("Analytics Dashboard by T-systems")
 app_root.configure(background="black")
 
 #Add backgroundImage
-image1=ImageTk.PhotoImage(Image.open("Images/BgImg.PNG"))
+image1=ImageTk.PhotoImage(Image.open("BgImg.PNG"))
 app_canvas = Canvas(app_root,width=1080,height=2160)
 app_canvas.pack(fill="both",expand=True)
 app_canvas.create_image(0,0,image=image1,anchor="nw")
 
 #build title and project name
 app_canvas.create_text(250,35,text="Analytics Dashboard",font=("comicssansns",20,"bold"),fill='White')
-LogoImg = ImageTk.PhotoImage(Image.open("Images/TSysLogo.PNG"))
+LogoImg = ImageTk.PhotoImage(Image.open("TSysLogo.PNG"))
 app_canvas.create_image(250, 100, image=LogoImg)
 
 
@@ -135,6 +205,23 @@ app_canvas.create_line(1, 150, 1360, 150,fill="#fb0")
 app_canvas.create_text(85,170,text="Enter Input File Path:",font=("comicssansns",10,"bold"),fill='White')
 FilePath = Entry (app_root,width=50)
 app_canvas.create_window(170, 200, window=FilePath)
+
+# Function for opening the file
+def file_opener():
+    rep = filedialog.askopenfilenames(
+        parent=app_root,
+        initialdir='/',
+        initialfile='tmp',
+        filetypes=[
+            ("PNG", "*.png"),
+            ("JPEG", "*.jpg"),
+            ("All files", "*")])
+    print(rep)
+
+
+# Browse Button label
+Btn_Browse = Button(app_root, text ='Browse', command = lambda:file_opener())
+Win_BtnBrowseWindow = app_canvas.create_window(365,200,window=Btn_Browse)
 
 #Add separator line
 app_canvas.create_line(1, 230, 1360, 230,fill="#fb0")
@@ -148,11 +235,17 @@ app_canvas.create_window(170, 280, window=OutputFolderPath)
 app_canvas.create_line(1, 300, 1360, 300,fill="#fb0")
 
 #Add Generate Filter Button
-Btn_GenerateFilters = Button(app_root,text='Generate Filters > > >',command=generatefilters)
+Btn_GenerateFilters = Button(app_root,text='Generate Filters > > >',command=openNewWindow)
 Win_BtnGenerateFiltersWindow = app_canvas.create_window(80,330,window=Btn_GenerateFilters)
 
 #Add separator line
 app_canvas.create_line(1, 355, 1360, 355,fill="#fb0")
+
+# function to open a new window
+# on a button click
+
+
+
 
 '''
 #Build Filter Options
