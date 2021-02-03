@@ -48,8 +48,8 @@ def BuildGraphs():
     UniqueValues1 = data["Priority"].dropna().unique().tolist()
 
     chart_data = CategoryChartData()
-    chart_data.categories = UniqueValuesCount1
-    chart_data.add_series(UniqueValues1)
+    chart_data.categories = UniqueValues1
+    chart_data.add_series('Series 1',UniqueValuesCount1)
     x, y, cx, cy = Inches(2), Inches(2), Inches(6), Inches(4.5)
     slide.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, x, y, cx, cy, chart_data)
 
