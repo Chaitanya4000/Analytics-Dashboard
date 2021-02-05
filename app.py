@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from tkinter import filedialog
 from datetime import datetime
 from pptx import Presentation
-from pptx.chart.data import CategoryChartData
+#from pptx.chart.data import CategoryChartData
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.util import Inches
 #from wordcloud import WordCloud, STOPWORDS, Image
@@ -55,6 +55,20 @@ def BuildGraphs():
 
     pptx.save(str_OutputFolderPath)
 
+# Function for opening the file
+def file_opener():
+    global str_InputFilePath
+    str_InputFilePath = filedialog.askopenfilenames(
+        parent=app_root,
+        initialdir='/',
+        initialfile='tmp',
+        filetypes=[("Excel", "xlsx")])
+    print(str_InputFilePath)
+    str_InputFilePath = str(str_InputFilePath).replace("(","").replace(")","").replace("'","").replace(",","")
+    str_FileName = os.path.basename(str_InputFilePath)
+
+    if (str_InputFilePath != ""):
+        app_canvas.create_text(270, 200, text=str_FileName, font=("comicssansns", 10, "bold"), fill='White')
 
 
 #OpenFilterWindow fundction is called to display all column names and filters for graphs.
@@ -71,10 +85,26 @@ def OpenFilterWindow():
         # Building a new window
         newWindow = Tk()
 
+        def file_opener1():
+            global str_InputFilePath
+            str_InputFilePath = filedialog.askopenfilenames(
+                parent=newWindow,
+                initialdir='/',
+                initialfile='tmp',
+                filetypes=[("Excel", "xlsx")])
+            print(str_InputFilePath)
+            str_InputFilePath = str(str_InputFilePath).replace("(", "").replace(")", "").replace("'", "").replace(",",
+                                                                                                                  "")
+            str_FileName = os.path.basename(str_InputFilePath)
+
+            if (str_InputFilePath != ""):
+                newWindow_canvas.create_text(270, 200, text=str_FileName, font=("comicssansns", 10, "bold"),
+                                             fill='White')
+
         # sets the geometry of toplevel
-        newWindow.geometry("1200x700")
-        newWindow.maxsize(1200, 700)
-        newWindow.minsize(1200, 700)
+        newWindow.geometry("1500x700")
+        newWindow.maxsize(1500, 700)
+        newWindow.minsize(1500, 700)
 
         #Add title to the main window
         newWindow.title("Analytics Dashboard by T-systems")
@@ -87,25 +117,59 @@ def OpenFilterWindow():
         newWindow_canvas.create_image(0, 0, image=img_BgImg, anchor="nw")
 
         # build title and project name
-        newWindow_canvas.create_text(550, 35, text="Analytics Dashboard", font=("comicssansns", 20, "bold"), fill='White')
+        newWindow_canvas.create_text(750, 35, text="Analytics Dashboard", font=("comicssansns", 20, "bold"), fill='White')
         LogoImg = ImageTk.PhotoImage(Image.open("TSysLogo.PNG"))
-        newWindow_canvas.create_image(550, 100, image=LogoImg)
+        newWindow_canvas.create_image(750, 100, image=LogoImg)
 
         # Add separator line
-        newWindow_canvas.create_line(1, 150, 1360, 150, fill="#fb0")
+        newWindow_canvas.create_line(1, 150, 2000, 150, fill="#fb0")
+
+        '''# build input filepath input box
+        newWindow_canvas.create_text(85, 170, text="Enter Input File Path:", font=("comicssansns", 10, "bold"), fill='White')
+
+        # build output folder input box
+        newWindow_canvas.create_text(95, 250, text="Enter Output Folder Path:", font=("comicssansns", 10, "bold"),
+                               fill='White')
+        OutputFolderPath = Entry(newWindow, width=50)
+        newWindow_canvas.create_window(170, 280, window=OutputFolderPath)'''
+
+        # build input filepath input box
+        newWindow_canvas.create_text(170, 200, text="Selected input file name is : ChangeRequests.xlsx", font=("comicssansns", 10, "bold"),
+                                     fill='White')
+
+        # build input filepath input box
+        newWindow_canvas.create_text(170, 260, text="Selected output file name is : ResultRequests.pptx", font=("comicssansns", 10, "bold"),
+                                     fill='White')
+
+        '''# Add Generate Filter Button
+        Btn_GenerateFilters = Button(newWindow, text='Generate Filters > > >', command=GenerateFilters)
+        Win_BtnGenerateFiltersWindow = newWindow_canvas.create_window(80, 330, window=Btn_GenerateFilters)
+
+        # Browse Button label
+        Btn_Browse = Button(newWindow, text='Browse & Select file', command=lambda: file_opener1())
+        Win_BtnBrowseWindow = newWindow_canvas.create_window(75, 200, window=Btn_Browse)'''
 
         # build label Column Name
-        newWindow_canvas.create_text(85, 170, text="Choose Column Names:", font=("comicssansns", 10, "bold"), fill='White')
+        newWindow_canvas.create_text(850, 170, text="Select graph to be displayed:", font=("comicssansns", 10, "bold"),
+                                     fill='White')
+
+        # build label Column Name
+        newWindow_canvas.create_text(640, 170, text="Select Column Names:", font=("comicssansns", 10, "bold"), fill='White')
+
 
         # Submit button on new window
         Btn_Submit = Button(newWindow, text='<<< Submit >>>', command=BuildGraphs)
-        Win_Btn_Submit = newWindow_canvas.create_window(1050, 625, window=Btn_Submit)
+        Win_Btn_Submit = newWindow_canvas.create_window(75, 380, window=Btn_Submit)
+
+        # Submit button on new window
+        Btn_Submit = Button(newWindow, text='<<< Reset >>>', command=BuildGraphs)
+        Win_Btn_Submit = newWindow_canvas.create_window(200, 380, window=Btn_Submit)
 
         #Logic to display columns as a filter options.
 
         x = 1
         int_Rowcounter = 220
-        int_ColumnCounter = 100
+        int_ColumnCounter = 650
         int_Dropdowncounter = 0
         BGOptions1 = ["PieChart", "BarGraph", "WordCloud"]
 
@@ -125,6 +189,15 @@ def OpenFilterWindow():
             int_Rowcounter = int_Rowcounter + 50
             int_Dropdowncounter = int_Dropdowncounter + 50
             if (x==10) :
+                # build label Column Name
+                newWindow_canvas.create_text(1360, 170, text="Select graph to be displayed:",
+                                             font=("comicssansns", 10, "bold"),
+                                             fill='White')
+
+                # build label Column Name
+                newWindow_canvas.create_text(1140, 170, text="Select Column Names:", font=("comicssansns", 10, "bold"),
+                                             fill='White')
+
                 int_ColumnCounter = int_ColumnCounter+500
                 int_Rowcounter = 220
 
@@ -246,7 +319,7 @@ app_canvas.create_text(85,170,text="Enter Input File Path:",font=("comicssansns"
 #app_canvas.create_window(170, 200, window=FilePath)
 
 str_InputFilePath = ""
-
+'''
 # Function for opening the file
 def file_opener():
     global str_InputFilePath
@@ -261,10 +334,10 @@ def file_opener():
 
     if (str_InputFilePath != ""):
         app_canvas.create_text(270, 200, text=str_FileName, font=("comicssansns", 10, "bold"), fill='White')
-
+'''
 
 # Browse Button label
-Btn_Browse = Button(app_root, text ='Click to select file...', command = lambda:file_opener())
+Btn_Browse = Button(app_root, text ='Browse & Select file', command = lambda:file_opener())
 Win_BtnBrowseWindow = app_canvas.create_window(75,200,window=Btn_Browse)
 
 #Add separator line
