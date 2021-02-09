@@ -1,8 +1,8 @@
-#>>>>>>>>>>>>>>> Analytics Dashboard <<<<<<<<<<<<<<<
+# >>>>>>>>>>>>>>> Analytics Dashboard <<<<<<<<<<<<<<<
 
-#>>>>>>>>>>>>>>> Import all required libraries <<<<<<<<<<<<<<<
+# >>>>>>>>>>>>>>> Import all required libraries <<<<<<<<<<<<<<<
 from tkinter import *
-from PIL import ImageTk,Image
+from PIL import ImageTk, Image
 import time
 import os
 import pandas as pd
@@ -11,15 +11,73 @@ import matplotlib.pyplot as plt
 from tkinter import filedialog
 from datetime import datetime
 from pptx import Presentation
-from pptx.chart.data import CategoryChartData
+from pptx.chart.data import ChartData
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.util import Inches
 from pptx.enum.chart import XL_LEGEND_POSITION
 from pptx.enum.chart import XL_DATA_LABEL_POSITION
 from pptx.util import Cm
-#from wordcloud import WordCloud, STOPWORDS, Imagecolourgenerator
+from wordcloud import WordCloud, STOPWORDS
 
-#>>>>>>>>>>>>>>> Initialize Variables <<<<<<<<<<<<<<<
+def KillMainApp():
+    app.destroy()
+
+
+class Login:
+    def __init__(self,app):
+        self.app=app
+        self.app.title("Login System")
+        self.app.geometry("750x600")
+        self.app.resizable(False,False)
+
+        #===BG Image=====
+        self.bg = ImageTk.PhotoImage(file="images/BgImg.PNG")
+        self.bg_image=Label(self.app, image=self.bg).place(x=0,y=0,relwidth=1,relheight=1)
+
+        # ====Login Frame=====
+        Frame_login=Frame(self.app,bg="white")
+        Frame_login.place(x=130,y=130,height=340,width=500)
+
+        #title of login page
+        title = Label(Frame_login,text="Login Here",font=("Impact",25,"bold"),fg="#d77337",bg="white").place(x=90,y=30)
+
+        lbl_user = Label(Frame_login, text="Username", font=("Goudy Old Style", 15, "bold"), fg="gray",
+                     bg="white").place(x=90,
+                                       y=140)
+        self.txt_user=Entry(Frame_login,font=("times new roman", 15),bg="lightgray")
+        self.txt_user.place(x=90,y=170,width=350,height=35)
+
+        lbl_pass = Label(Frame_login, text="Password", font=("Goudy Old Style", 15, "bold"), fg="gray",
+                         bg="white").place(x=90,
+                                           y=210)
+        self.txt_pass = Entry(Frame_login, font=("times new roman", 15), bg="lightgray")
+        self.txt_pass.place(x=90, y=240, width=350, height=35)
+        self.txt_pass.config(show="*")
+
+        #forget_btn = Button(Frame_login, text="Forget Password?",cursor="hand2", bg="white",fg="#d77337",bd=0,font=("times new roman",12)).place(x=90,y=280)
+        Login_btn = Button(self.app,command=self.login_function,cursor="hand2", text="Login", fg="white", bg="#d77337",
+                        font=("times new roman",20)).place(x=300, y=470,width=180,height=40)
+
+
+    def login_function(self):
+
+        if self.txt_pass.get()=="" or self.txt_user.get()=="":
+            messagebox.showerror("Error","All fields are required",parent=self.app)
+        elif self.txt_pass.get()!="admin" or self.txt_user.get()!="admin" :
+            messagebox.showerror("Error","Invalid Username/Password",parent=self.app)
+        else:
+            KillMainApp()
+            Login
+
+            #messagebox.showinfo("Welcome",f"Welcome {self.txt_user.get()}\nYour Password: {self.txt_pass.get()}", parent=self.app)
+
+
+app=Tk()
+obj=Login(app)
+app.mainloop()
+
+
+# >>>>>>>>>>>>>>> Initialize Variables <<<<<<<<<<<<<<<
 str_OutputFolderPath = ""
 str_InputFilePath = ""
 str_InputFileName = ""
@@ -30,23 +88,24 @@ vary = []
 dic_chkvar = {}
 dic_dropdwnvar = {}
 
-#>>>>>>>>>>>>>>> All functions that are used in applications <<<<<<<<<<<<<<<
 
-#KillMainApp function will kill the main app window
+# >>>>>>>>>>>>>>> All functions that are used in applications <<<<<<<<<<<<<<<
+
+# KillMainApp function will kill the main app window
 def KillMainApp():
     app_root.destroy()
 
-#GenerateFilters function is called by generate filters button from main app.
+
+# GenerateFilters function is called by generate filters button from main app.
 def GenerateFilters():
     global str_OutputFileName
     global str_OutputFolderPath
     str_OutputFolderPath = str(OutputFolderPath.get())
     str_OutputFileName = os.path.basename(str_OutputFolderPath)
-    print("Output folder path is: "+str_OutputFolderPath)
-    print("Output file name is: "+str_OutputFileName)
+    print("Output folder path is: " + str_OutputFolderPath)
+    print("Output file name is: " + str_OutputFileName)
     KillMainApp()
     OpenFilterWindow()
-
 
 
 # Function for opening the file
@@ -59,17 +118,16 @@ def file_opener():
         initialfile='tmp',
         filetypes=[("Excel", "xlsx")])
     print(str_InputFilePath)
-    str_InputFilePath = str(str_InputFilePath).replace("(","").replace(")","").replace("'","").replace(",","")
+    str_InputFilePath = str(str_InputFilePath).replace("(", "").replace(")", "").replace("'", "").replace(",", "")
     str_InputFileName = os.path.basename(str_InputFilePath)
 
     if (str_InputFilePath != ""):
         app_canvas.create_text(270, 200, text=str_InputFileName, font=("comicssansns", 10, "bold"), fill='White')
 
 
-#OpenFilterWindow fundction is called to display all column names and filters for graphs.
+# OpenFilterWindow fundction is called to display all column names and filters for graphs.
 
 def OpenFilterWindow():
-
     def BuildGraphs():
         print("Build graph function executing...")
 
@@ -80,27 +138,26 @@ def OpenFilterWindow():
         slide.placeholders[1].text = " -Created by Analytics Dashboard."
 
         for column in Li_ColumnNames:
-            if (dic_chkvar["ChkVar_"+column].get()== 1):
+            if (dic_chkvar["ChkVar_" + column].get() == 1):
                 print("Selected Column name is : " + column)
-                print("Selected graph value for respective column is : "+str(dic_dropdwnvar["DropdwnVar_"+column].get()))
+                print("Selected graph value for respective column is : " + str(
+                    dic_dropdwnvar["DropdwnVar_" + column].get()))
 
-
-                if (dic_dropdwnvar["DropdwnVar_"+column].get() == "BarGraph"):
-
+                if (dic_dropdwnvar["DropdwnVar_" + column].get() == "BarGraph"):
                     print("Output Folder Path: " + str_OutputFolderPath)
-                    print("Output File Name: "+ str_OutputFileName)
+                    print("Output File Name: " + str_OutputFileName)
 
                     data = pd.read_excel(str_InputFilePath)
                     UniqueValuesCount1 = pd.value_counts(data[column])
                     UniqueValues1 = data[column].dropna().unique().tolist()
 
                     slide = pptx.slides.add_slide(pptx.slide_layouts[5])
-                    chart_data = CategoryChartData()
+                    chart_data = ChartData()
                     chart_data.categories = UniqueValues1
                     chart_data.add_series('Series 1', UniqueValuesCount1)
                     x, y, cx, cy = Inches(2), Inches(2), Inches(6), Inches(4.5)
                     slide.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, x, y, cx, cy, chart_data)
-                    slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get())+" for " + column
+                    slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get()) + " for " + column
 
                 if (dic_dropdwnvar["DropdwnVar_" + column].get() == "PieChart"):
                     print("Output Folder Path: " + str_OutputFolderPath)
@@ -111,13 +168,13 @@ def OpenFilterWindow():
                     UniqueValues1 = data[column].dropna().unique().tolist()
 
                     slide = pptx.slides.add_slide(pptx.slide_layouts[5])
-                    slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get())+" for " + column
-                    chart_data = CategoryChartData()
+                    slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get()) + " for " + column
+                    chart_data = ChartData()
                     chart_data.categories = UniqueValues1
                     chart_data.add_series('Series 1', UniqueValuesCount1)
 
                     x, y, cx, cy = Inches(2), Inches(2), Inches(6), Inches(4.5)
-                    chart = slide.shapes.add_chart(XL_CHART_TYPE.PIE,  x, y, cx, cy, chart_data).chart
+                    chart = slide.shapes.add_chart(XL_CHART_TYPE.PIE, x, y, cx, cy, chart_data).chart
 
                     chart.has_legend = True
                     chart.legend.position = XL_LEGEND_POSITION.BOTTOM
@@ -128,7 +185,6 @@ def OpenFilterWindow():
                     data_labels.number_format = '0.0000%'
                     data_labels.position = XL_DATA_LABEL_POSITION.OUTSIDE_END
 
-
                 if (dic_dropdwnvar["DropdwnVar_" + column].get() == "WordCloud"):
                     data = pd.read_excel(str_InputFilePath)
                     InputColumn = data[column].dropna()
@@ -137,16 +193,16 @@ def OpenFilterWindow():
                         str_InputText = str_InputText + " " + str(row)
                     print(str_InputText)
                     mask = np.array(Image.open("Images\\cloud.png"))
-                    #stopwords = set(STOPWORDS)
-                    #wc = WordCloud(background_color="black",mask=mask,max_words=200,stopwords=stopwords)
-                    #wc.generate(str_InputText)
-                    #wc.to_file("Images\\wc.png")
+                    stopwords = set(STOPWORDS)
+                    wc = WordCloud(background_color="black",mask=mask,max_words=200,stopwords=stopwords)
+                    wc.generate(str_InputText)
+                    wc.to_file("Images\\wc.png")
                     slide = pptx.slides.add_slide(pptx.slide_layouts[5])
                     slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get()) + " for " + column
                     img_WordcloudImage = "Images\\wc.png"
-                    from_left = Inches(3)
+                    from_left = Inches(0.1)
                     from_top = Inches(2)
-                    add_picture = slide.shapes.add_picture(img_WordcloudImage,from_left,from_top)
+                    add_picture = slide.shapes.add_picture(img_WordcloudImage, from_left, from_top)
 
                     if (dic_dropdwnvar["DropdwnVar_" + column].get() == "WordCount"):
                         data = pd.read_excel(str_InputFilePath)
@@ -168,8 +224,7 @@ def OpenFilterWindow():
 
         pptx.save(str_OutputFolderPath)
 
-
-    #Get list of all columns in excel
+    # Get list of all columns in excel
     global Li_ColumnNames
     print("ExcelFilePath: " + str_InputFilePath)
     str_ExcelFilepath = str_InputFilePath
@@ -184,7 +239,7 @@ def OpenFilterWindow():
     newWindow.maxsize(1300, 700)
     newWindow.minsize(1300, 700)
 
-    #Add title to the main window
+    # Add title to the main window
     newWindow.title("Analytics Dashboard by T-systems")
     newWindow.configure(background="black")
 
@@ -203,20 +258,19 @@ def OpenFilterWindow():
     newWindow_canvas.create_line(1, 150, 2000, 150, fill="#fb0")
 
     # build input filepath input box
-    newWindow_canvas.create_text(170, 200, text="Input: "+str_InputFileName, font=("comicssansns", 10, "bold"),
-                                    fill='White')
+    newWindow_canvas.create_text(170, 200, text="Input: " + str_InputFileName, font=("comicssansns", 10, "bold"),
+                                 fill='White')
 
     # build input filepath input box
-    newWindow_canvas.create_text(170, 260, text="Output: "+str_OutputFileName, font=("comicssansns", 10, "bold"),
-                                    fill='White')
+    newWindow_canvas.create_text(170, 260, text="Output: " + str_OutputFileName, font=("comicssansns", 10, "bold"),
+                                 fill='White')
 
     # build label Column Name
     newWindow_canvas.create_text(740, 170, text="Select Graph Type::", font=("comicssansns", 10, "bold"),
-                                    fill='White')
+                                 fill='White')
 
     # build label Column Name
     newWindow_canvas.create_text(540, 170, text="Select Column Names:", font=("comicssansns", 10, "bold"), fill='White')
-
 
     # Submit button on new window
     Btn_Submit = Button(newWindow, text='<<< Reset <<<', command=BuildGraphs)
@@ -226,13 +280,13 @@ def OpenFilterWindow():
     Btn_Submit = Button(newWindow, text='>>> Submit >>>', command=BuildGraphs)
     Win_Btn_Submit = newWindow_canvas.create_window(200, 380, window=Btn_Submit)
 
-    #Logic to display columns as a filter options.
+    # Logic to display columns as a filter options.
 
     x = 1
     int_Rowcounter = 220
     int_ColumnCounter = 550
     int_Dropdowncounter = 0
-    BGOptions1 = ["PieChart", "BarGraph", "WordCloud","WordCount"]
+    BGOptions1 = ["PieChart", "BarGraph", "WordCloud", "WordCount"]
 
     for i in Li_ColumnNames:
 
@@ -240,92 +294,90 @@ def OpenFilterWindow():
         dic_dropdwnvar["DropdwnVar_{0}".format(i)] = StringVar(newWindow)
         vary = list(dic_dropdwnvar)
         varx = list(dic_chkvar)
-        print(varx[x-1])
+        print(varx[x - 1])
         print(vary[x - 1])
 
-
-        Chk_Button = Checkbutton(newWindow_canvas, text=i, variable=dic_chkvar[varx[x-1]], width=20)
+        Chk_Button = Checkbutton(newWindow_canvas, text=i, variable=dic_chkvar[varx[x - 1]], width=20)
         newWindow_canvas.create_window(int_ColumnCounter, int_Rowcounter, window=Chk_Button)
-        dic_dropdwnvar[vary[x-1]].set(BGOptions1[0])
+        dic_dropdwnvar[vary[x - 1]].set(BGOptions1[0])
 
-        BGOption1 = OptionMenu(newWindow, dic_dropdwnvar[vary[x-1]], *BGOptions1)
+        BGOption1 = OptionMenu(newWindow, dic_dropdwnvar[vary[x - 1]], *BGOptions1)
         BGOption1.config(width=8, font=('Helvetica', 10))
-        newWindow_canvas.create_window(int_ColumnCounter+180, int_Rowcounter , window=BGOption1)
+        newWindow_canvas.create_window(int_ColumnCounter + 180, int_Rowcounter, window=BGOption1)
 
         x = x + 1
         int_Rowcounter = int_Rowcounter + 50
         int_Dropdowncounter = int_Dropdowncounter + 50
-        if (x==11) :
+        if (x == 11):
             # build label Column Name
             newWindow_canvas.create_text(1130, 170, text="Select Graph Type:",
-                                            font=("comicssansns", 10, "bold"),
-                                            fill='White')
+                                         font=("comicssansns", 10, "bold"),
+                                         fill='White')
 
             # build label Column Name
             newWindow_canvas.create_text(950, 170, text="Select Column Names:", font=("comicssansns", 10, "bold"),
-                                            fill='White')
+                                         fill='White')
 
-            int_ColumnCounter = int_ColumnCounter+400
+            int_ColumnCounter = int_ColumnCounter + 400
             int_Rowcounter = 220
 
-        if (x==22):
+        if (x == 22):
             break
 
     newWindow.mainloop()
 
-#>>>>>>>>>>>>>>>>>>>> Build Main Application <<<<<<<<<<<<<<<<<<<<<<<<<<
+
+# >>>>>>>>>>>>>>>>>>>> Build Main Application <<<<<<<<<<<<<<<<<<<<<<<<<<
 app_root = Tk()
 
-#GUI Framework
+# GUI Framework
 app_root.geometry("500x400")
-app_root.maxsize(500,400)
-app_root.minsize(500,400)
+app_root.maxsize(500, 400)
+app_root.minsize(500, 400)
 
 app_root.title("Analytics Dashboard by T-systems")
 app_root.configure(background="black")
 
-#Add backgroundImage
-image1=ImageTk.PhotoImage(Image.open("Images\\BgImg.PNG"))
-app_canvas = Canvas(app_root,width=1080,height=2160)
-app_canvas.pack(fill="both",expand=True)
-app_canvas.create_image(0,0,image=image1,anchor="nw")
+# Add backgroundImage
+image1 = ImageTk.PhotoImage(Image.open("Images\\BgImg.PNG"))
+app_canvas = Canvas(app_root, width=1080, height=2160)
+app_canvas.pack(fill="both", expand=True)
+app_canvas.create_image(0, 0, image=image1, anchor="nw")
 
-#build title and project name
-app_canvas.create_text(250,35,text="Analytics Dashboard",font=("comicssansns",20,"bold"),fill='White')
+# build title and project name
+app_canvas.create_text(250, 35, text="Analytics Dashboard", font=("comicssansns", 20, "bold"), fill='White')
 LogoImg = ImageTk.PhotoImage(Image.open("Images\\TSysLogo.PNG"))
 app_canvas.create_image(250, 100, image=LogoImg)
 
+# Add separator line
+app_canvas.create_line(1, 150, 1360, 150, fill="#fb0")
 
-#Add separator line
-app_canvas.create_line(1, 150, 1360, 150,fill="#fb0")
-
-#build input filepath input box
-app_canvas.create_text(85,170,text="Enter Input File Path:",font=("comicssansns",10,"bold"),fill='White')
-
+# build input filepath input box
+app_canvas.create_text(85, 170, text="Enter Input File Path:", font=("comicssansns", 10, "bold"), fill='White')
 
 # Browse Button label
-Btn_Browse = Button(app_root, text ='Browse & Select file', command = lambda:file_opener())
-Win_BtnBrowseWindow = app_canvas.create_window(75,200,window=Btn_Browse)
+Btn_Browse = Button(app_root, text='Browse & Select file', command=lambda: file_opener())
+Win_BtnBrowseWindow = app_canvas.create_window(75, 200, window=Btn_Browse)
 
-#Add separator line
-app_canvas.create_line(1, 230, 1360, 230,fill="#fb0")
+# Add separator line
+app_canvas.create_line(1, 230, 1360, 230, fill="#fb0")
 
-#build output folder input box
-app_canvas.create_text(95,250,text="Enter Output Folder Path:",font=("comicssansns",10,"bold"),fill='White')
-OutputFolderPath = Entry (app_root,width=50)
+# build output folder input box
+app_canvas.create_text(95, 250, text="Enter Output Folder Path:", font=("comicssansns", 10, "bold"), fill='White')
+OutputFolderPath = Entry(app_root, width=50)
 app_canvas.create_window(170, 280, window=OutputFolderPath)
 
-#Add separator line
-app_canvas.create_line(1, 300, 1360, 300,fill="#fb0")
+# Add separator line
+app_canvas.create_line(1, 300, 1360, 300, fill="#fb0")
 
-#Add Generate Filter Button
-Btn_GenerateFilters = Button(app_root,text='Generate Filters > > >',command=GenerateFilters)
-Win_BtnGenerateFiltersWindow = app_canvas.create_window(80,330,window=Btn_GenerateFilters)
+# Add Generate Filter Button
+Btn_GenerateFilters = Button(app_root, text='Generate Filters > > >', command=GenerateFilters)
+Win_BtnGenerateFiltersWindow = app_canvas.create_window(80, 330, window=Btn_GenerateFilters)
 
-#Add separator line
-app_canvas.create_line(1, 355, 1360, 355,fill="#fb0")
+# Add separator line
+app_canvas.create_line(1, 355, 1360, 355, fill="#fb0")
 
-#Add separator line
-app_canvas.create_line(1, 500, 1360, 500,fill="#fb0")
+# Add separator line
+app_canvas.create_line(1, 500, 1360, 500, fill="#fb0")
 
 app_root.mainloop()
