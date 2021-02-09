@@ -71,11 +71,10 @@ def file_opener():
 def OpenFilterWindow():
 
     def BuildGraphs():
-        int_counter = 0
         print("Build graph function executing...")
 
         pptx = Presentation()
-        first_slide_layout = pptx.slide_layouts[int_counter]
+        first_slide_layout = pptx.slide_layouts[0]
         slide = pptx.slides.add_slide(first_slide_layout)
         slide.shapes.title.text = "< < < Data Analysis > > >"
         slide.placeholders[1].text = " -Created by Analytics Dashboard."
@@ -95,15 +94,13 @@ def OpenFilterWindow():
                     UniqueValuesCount1 = pd.value_counts(data[column])
                     UniqueValues1 = data[column].dropna().unique().tolist()
 
-                    slide = pptx.slides.add_slide(pptx.slide_layouts[int_counter])
+                    slide = pptx.slides.add_slide(pptx.slide_layouts[5])
                     chart_data = CategoryChartData()
                     chart_data.categories = UniqueValues1
                     chart_data.add_series('Series 1', UniqueValuesCount1)
                     x, y, cx, cy = Inches(2), Inches(2), Inches(6), Inches(4.5)
                     slide.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, x, y, cx, cy, chart_data)
-                    slide.shapes.title.text = "Graph as per "+column
-
-                    int_counter = int_counter + 1
+                    slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get())+" for " + column
 
                 if (dic_dropdwnvar["DropdwnVar_" + column].get() == "PieChart"):
                     print("Output Folder Path: " + str_OutputFolderPath)
@@ -113,8 +110,8 @@ def OpenFilterWindow():
                     UniqueValuesCount1 = pd.value_counts(data[column])
                     UniqueValues1 = data[column].dropna().unique().tolist()
 
-                    slide = pptx.slides.add_slide(pptx.slide_layouts[int_counter])
-                    slide.shapes.title.text = "Graph as per " + column
+                    slide = pptx.slides.add_slide(pptx.slide_layouts[5])
+                    slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get())+" for " + column
                     chart_data = CategoryChartData()
                     chart_data.categories = UniqueValues1
                     chart_data.add_series('Series 1', UniqueValuesCount1)
@@ -132,9 +129,6 @@ def OpenFilterWindow():
                     data_labels.position = XL_DATA_LABEL_POSITION.OUTSIDE_END
 
 
-                    int_counter = int_counter + 1
-
-
                 if (dic_dropdwnvar["DropdwnVar_" + column].get() == "WordCloud"):
                     data = pd.read_excel(str_InputFilePath)
                     InputColumn = data[column].dropna()
@@ -147,6 +141,30 @@ def OpenFilterWindow():
                     #wc = WordCloud(background_color="black",mask=mask,max_words=200,stopwords=stopwords)
                     #wc.generate(str_InputText)
                     #wc.to_file("Images\\wc.png")
+                    slide = pptx.slides.add_slide(pptx.slide_layouts[5])
+                    slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get()) + " for " + column
+                    img_WordcloudImage = "Images\\wc.png"
+                    from_left = Inches(3)
+                    from_top = Inches(2)
+                    add_picture = slide.shapes.add_picture(img_WordcloudImage,from_left,from_top)
+
+                    if (dic_dropdwnvar["DropdwnVar_" + column].get() == "WordCount"):
+                        data = pd.read_excel(str_InputFilePath)
+                        InputColumn = data[column].dropna()
+                        str_InputText = " "
+                        for row in InputColumn:
+                            str_InputText = str_InputText + " " + str(row)
+                        print(str_InputText)
+                        # stopwords = set(STOPWORDS)
+                        # wc = WordCloud(background_color="black",mask=mask,max_words=200,stopwords=stopwords)
+                        # wc.generate(str_InputText)
+                        # wc.to_file("Images\\wc.png")
+                        slide = pptx.slides.add_slide(pptx.slide_layouts[5])
+                        slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get()) + " for " + column
+                        img_WordcloudImage = "Images\\wc.png"
+                        from_left = Inches(3)
+                        from_top = Inches(2)
+                        add_picture = slide.shapes.add_picture(img_WordcloudImage, from_left, from_top)
 
         pptx.save(str_OutputFolderPath)
 
@@ -157,8 +175,6 @@ def OpenFilterWindow():
     str_ExcelFilepath = str_InputFilePath
     data = pd.read_excel(str_ExcelFilepath)
     Li_ColumnNames = data.columns
-
-
 
     # Building a new window
     newWindow = Tk()
@@ -187,11 +203,11 @@ def OpenFilterWindow():
     newWindow_canvas.create_line(1, 150, 2000, 150, fill="#fb0")
 
     # build input filepath input box
-    newWindow_canvas.create_text(170, 200, text="Selected input file name is : "+str_InputFileName, font=("comicssansns", 10, "bold"),
+    newWindow_canvas.create_text(170, 200, text="Input: "+str_InputFileName, font=("comicssansns", 10, "bold"),
                                     fill='White')
 
     # build input filepath input box
-    newWindow_canvas.create_text(170, 260, text="Selected output file name is : "+str_OutputFileName, font=("comicssansns", 10, "bold"),
+    newWindow_canvas.create_text(170, 260, text="Output: "+str_OutputFileName, font=("comicssansns", 10, "bold"),
                                     fill='White')
 
     # build label Column Name
@@ -216,7 +232,7 @@ def OpenFilterWindow():
     int_Rowcounter = 220
     int_ColumnCounter = 550
     int_Dropdowncounter = 0
-    BGOptions1 = ["PieChart", "BarGraph", "WordCloud"]
+    BGOptions1 = ["PieChart", "BarGraph", "WordCloud","WordCount"]
 
     for i in Li_ColumnNames:
 
@@ -239,7 +255,7 @@ def OpenFilterWindow():
         x = x + 1
         int_Rowcounter = int_Rowcounter + 50
         int_Dropdowncounter = int_Dropdowncounter + 50
-        if (x==10) :
+        if (x==11) :
             # build label Column Name
             newWindow_canvas.create_text(1130, 170, text="Select Graph Type:",
                                             font=("comicssansns", 10, "bold"),
@@ -252,7 +268,7 @@ def OpenFilterWindow():
             int_ColumnCounter = int_ColumnCounter+400
             int_Rowcounter = 220
 
-        if (x==21):
+        if (x==22):
             break
 
     newWindow.mainloop()
