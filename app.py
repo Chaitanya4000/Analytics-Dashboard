@@ -3,6 +3,7 @@
 # >>>>>>>>>>>>>>> Import all required libraries <<<<<<<<<<<<<<<
 from tkinter import *
 from PIL import ImageTk, Image
+import operator
 import time
 import os
 import pandas as pd
@@ -18,6 +19,21 @@ from pptx.enum.chart import XL_LEGEND_POSITION
 from pptx.enum.chart import XL_DATA_LABEL_POSITION
 from pptx.util import Cm
 from wordcloud import WordCloud, STOPWORDS
+from gensim.parsing.preprocessing import remove_stopwords
+from tkinter import messagebox as mbox
+
+# >>>>>>>>>>>>>>> Initialize Variables <<<<<<<<<<<<<<<
+str_OutputFolderPath = ""
+str_InputFilePath = ""
+str_InputFileName = ""
+str_OutputFileName = ""
+Li_ColumnNames = []
+varx = []
+vary = []
+dic_chkvar = {}
+dic_dropdwnvar = {}
+bol_loginsuccess=False
+
 
 def KillMainApp():
     app.destroy()
@@ -68,25 +84,17 @@ class Login:
         else:
             KillMainApp()
             Login
+            global bol_loginsuccess
+            bol_loginsuccess=True
+
+
 
             #messagebox.showinfo("Welcome",f"Welcome {self.txt_user.get()}\nYour Password: {self.txt_pass.get()}", parent=self.app)
-
 
 app=Tk()
 obj=Login(app)
 app.mainloop()
 
-
-# >>>>>>>>>>>>>>> Initialize Variables <<<<<<<<<<<<<<<
-str_OutputFolderPath = ""
-str_InputFilePath = ""
-str_InputFileName = ""
-str_OutputFileName = ""
-Li_ColumnNames = []
-varx = []
-vary = []
-dic_chkvar = {}
-dic_dropdwnvar = {}
 
 
 # >>>>>>>>>>>>>>> All functions that are used in applications <<<<<<<<<<<<<<<
@@ -94,6 +102,7 @@ dic_dropdwnvar = {}
 # KillMainApp function will kill the main app window
 def KillMainApp():
     app_root.destroy()
+
 
 
 # GenerateFilters function is called by generate filters button from main app.
@@ -125,7 +134,7 @@ def file_opener():
         app_canvas.create_text(270, 200, text=str_InputFileName, font=("comicssansns", 10, "bold"), fill='White')
 
 
-# OpenFilterWindow fundction is called to display all column names and filters for graphs.
+# OpenFilterWindow function is called to display all column names and filters for graphs.
 
 def OpenFilterWindow():
     def BuildGraphs():
@@ -204,25 +213,63 @@ def OpenFilterWindow():
                     from_top = Inches(2)
                     add_picture = slide.shapes.add_picture(img_WordcloudImage, from_left, from_top)
 
-                    if (dic_dropdwnvar["DropdwnVar_" + column].get() == "WordCount"):
-                        data = pd.read_excel(str_InputFilePath)
-                        InputColumn = data[column].dropna()
-                        str_InputText = " "
-                        for row in InputColumn:
-                            str_InputText = str_InputText + " " + str(row)
-                        print(str_InputText)
-                        # stopwords = set(STOPWORDS)
-                        # wc = WordCloud(background_color="black",mask=mask,max_words=200,stopwords=stopwords)
-                        # wc.generate(str_InputText)
-                        # wc.to_file("Images\\wc.png")
-                        slide = pptx.slides.add_slide(pptx.slide_layouts[5])
-                        slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get()) + " for " + column
-                        img_WordcloudImage = "Images\\wc.png"
-                        from_left = Inches(3)
-                        from_top = Inches(2)
-                        add_picture = slide.shapes.add_picture(img_WordcloudImage, from_left, from_top)
+                if (dic_dropdwnvar["DropdwnVar_" + column].get() == "WordCount"):
+                    data = pd.read_excel(str_InputFilePath)
+                    InputColumn = data[column].dropna()
+                    str_InputText = " "
+                    for row in InputColumn:
+                        str_InputText = str_InputText + " " + str(row)
+
+                    str_filteredsentence = remove_stopwords(str_InputText)
+                    print(str_filteredsentence)
+                    counts = dict()
+                    words = str_filteredsentence.split()
+
+                    for word in words:
+                        if word in counts:
+                            counts[word] += 1
+                        else:
+                            counts[word] = 1
+
+                    sorted_d = dict(sorted(counts.items(), key=operator.itemgetter(1), reverse=True))
+                    print(sorted_d)
+
+                    left_table = Inches(1)
+                    top_table = Inches(1.5)
+                    width_table = Inches(7)
+                    height_table = Inches(1)
+
+                    slide = pptx.slides.add_slide(pptx.slide_layouts[5])
+                    slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get()) + " for " + column
+                    add_table_Slide = slide.shapes.add_table(14, 2, left_table, top_table, width_table, height_table)
+                    table1 = add_table_Slide.table
+                    int_cellcounter = 1
+
+                    cell = table1.cell(0, 0)
+                    cell.text = "Word"
+
+                    cell = table1.cell(0, 1)
+                    cell.text = "Count"
+
+                    l1 = list(sorted_d.keys())
+                    l2 = list(sorted_d.values())
+                    print(len(l1))
+                    print(len(l2))
+
+                    for i in l1:
+                        cell = table1.cell(int_cellcounter, 0)
+                        cell.text = i
+
+                        cell2 = table1.cell(int_cellcounter, 1)
+                        cell2.text = str(l2[int_cellcounter - 1])
+
+                        int_cellcounter = int_cellcounter + 1
+                        print(int_cellcounter)
+                        if (int_cellcounter == 14):
+                            break
 
         pptx.save(str_OutputFolderPath)
+        mbox.showinfo("info","The ppt is saved at path :"+str_OutputFolderPath, parent=newWindow)
 
     # Get list of all columns in excel
     global Li_ColumnNames
@@ -328,56 +375,58 @@ def OpenFilterWindow():
 
 
 # >>>>>>>>>>>>>>>>>>>> Build Main Application <<<<<<<<<<<<<<<<<<<<<<<<<<
-app_root = Tk()
+if(bol_loginsuccess==True):
+    app_root = Tk()
 
-# GUI Framework
-app_root.geometry("500x400")
-app_root.maxsize(500, 400)
-app_root.minsize(500, 400)
+    # GUI Framework
+    app_root.geometry("500x400")
+    app_root.maxsize(500, 400)
+    app_root.minsize(500, 400)
 
-app_root.title("Analytics Dashboard by T-systems")
-app_root.configure(background="black")
+    app_root.title("Analytics Dashboard by T-systems")
+    app_root.configure(background="black")
 
-# Add backgroundImage
-image1 = ImageTk.PhotoImage(Image.open("Images\\BgImg.PNG"))
-app_canvas = Canvas(app_root, width=1080, height=2160)
-app_canvas.pack(fill="both", expand=True)
-app_canvas.create_image(0, 0, image=image1, anchor="nw")
+    # Add backgroundImage
+    image1 = ImageTk.PhotoImage(Image.open("Images\\BgImg.PNG"))
+    app_canvas = Canvas(app_root, width=1080, height=2160)
+    app_canvas.pack(fill="both", expand=True)
+    app_canvas.create_image(0, 0, image=image1, anchor="nw")
 
-# build title and project name
-app_canvas.create_text(250, 35, text="Analytics Dashboard", font=("comicssansns", 20, "bold"), fill='White')
-LogoImg = ImageTk.PhotoImage(Image.open("Images\\TSysLogo.PNG"))
-app_canvas.create_image(250, 100, image=LogoImg)
+    # build title and project name
+    app_canvas.create_text(250, 35, text="Analytics Dashboard", font=("comicssansns", 20, "bold"), fill='White')
+    LogoImg = ImageTk.PhotoImage(Image.open("Images\\TSysLogo.PNG"))
+    app_canvas.create_image(250, 100, image=LogoImg)
 
-# Add separator line
-app_canvas.create_line(1, 150, 1360, 150, fill="#fb0")
+    # Add separator line
+    app_canvas.create_line(1, 150, 1360, 150, fill="#fb0")
 
-# build input filepath input box
-app_canvas.create_text(85, 170, text="Enter Input File Path:", font=("comicssansns", 10, "bold"), fill='White')
+    # build input filepath input box
+    app_canvas.create_text(85, 170, text="Enter Input File Path:", font=("comicssansns", 10, "bold"), fill='White')
 
-# Browse Button label
-Btn_Browse = Button(app_root, text='Browse & Select file', command=lambda: file_opener())
-Win_BtnBrowseWindow = app_canvas.create_window(75, 200, window=Btn_Browse)
+    # Browse Button label
+    Btn_Browse = Button(app_root, text='Browse & Select file', command=lambda: file_opener())
+    Win_BtnBrowseWindow = app_canvas.create_window(75, 200, window=Btn_Browse)
 
-# Add separator line
-app_canvas.create_line(1, 230, 1360, 230, fill="#fb0")
+    # Add separator line
+    app_canvas.create_line(1, 230, 1360, 230, fill="#fb0")
 
-# build output folder input box
-app_canvas.create_text(95, 250, text="Enter Output Folder Path:", font=("comicssansns", 10, "bold"), fill='White')
-OutputFolderPath = Entry(app_root, width=50)
-app_canvas.create_window(170, 280, window=OutputFolderPath)
+    # build output folder input box
+    app_canvas.create_text(95, 250, text="Enter Output Folder Path:", font=("comicssansns", 10, "bold"), fill='White')
+    OutputFolderPath = Entry(app_root, width=50)
+    app_canvas.create_window(170, 280, window=OutputFolderPath)
 
-# Add separator line
-app_canvas.create_line(1, 300, 1360, 300, fill="#fb0")
+    # Add separator line
+    app_canvas.create_line(1, 300, 1360, 300, fill="#fb0")
 
-# Add Generate Filter Button
-Btn_GenerateFilters = Button(app_root, text='Generate Filters > > >', command=GenerateFilters)
-Win_BtnGenerateFiltersWindow = app_canvas.create_window(80, 330, window=Btn_GenerateFilters)
+    # Add Generate Filter Button
+    Btn_GenerateFilters = Button(app_root, text='Generate Filters > > >', command=GenerateFilters)
+    Win_BtnGenerateFiltersWindow = app_canvas.create_window(80, 330, window=Btn_GenerateFilters)
 
-# Add separator line
-app_canvas.create_line(1, 355, 1360, 355, fill="#fb0")
+    # Add separator line
+    app_canvas.create_line(1, 355, 1360, 355, fill="#fb0")
 
-# Add separator line
-app_canvas.create_line(1, 500, 1360, 500, fill="#fb0")
+    #Add separator line
+    app_canvas.create_line(1, 500, 1360, 500, fill="#fb0")
 
-app_root.mainloop()
+    app_root.mainloop()
+
