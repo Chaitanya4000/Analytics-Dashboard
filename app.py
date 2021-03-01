@@ -6,8 +6,12 @@ from PIL import ImageTk, Image
 import operator
 import time
 import os
+from langdetect import detect
+import re
+from translate import Translator
 import pandas as pd
 import numpy as np
+from tkinter.ttk import Progressbar
 import matplotlib.pyplot as plt
 from tkinter import filedialog
 from datetime import datetime
@@ -27,6 +31,7 @@ str_OutputFolderPath = ""
 str_InputFilePath = ""
 str_InputFileName = ""
 str_OutputFileName = ""
+str_inputsheetname = ""
 Li_ColumnNames = []
 varx = []
 vary = []
@@ -108,12 +113,15 @@ def KillMainApp():
 # GenerateFilters function is called by generate filters button from main app.
 def GenerateFilters():
     global str_OutputFileName
+    global str_inputsheetname
     global str_OutputFolderPath
     str_OutputFolderPath = str(OutputFolderPath.get())
+    str_inputsheetname = str(str_inputsheetname.get())
     str_OutputFileName = os.path.basename(str_OutputFolderPath)
     print("Output folder path is: " + str_OutputFolderPath)
     print("Output file name is: " + str_OutputFileName)
     KillMainApp()
+
     OpenFilterWindow()
 
 
@@ -137,6 +145,7 @@ def file_opener():
 # OpenFilterWindow function is called to display all column names and filters for graphs.
 
 def OpenFilterWindow():
+
     def BuildGraphs():
         print("Build graph function executing...")
 
@@ -144,7 +153,7 @@ def OpenFilterWindow():
         first_slide_layout = pptx.slide_layouts[0]
         slide = pptx.slides.add_slide(first_slide_layout)
         slide.shapes.title.text = "< < < Data Analysis > > >"
-        slide.placeholders[1].text = " -Created by Analytics Dashboard."
+        slide.placeholders[1].text = " -Created by SmarTAMM Analytics Solution."
 
         for column in Li_ColumnNames:
             if (dic_chkvar["ChkVar_" + column].get() == 1):
@@ -165,24 +174,88 @@ def OpenFilterWindow():
                     chart_data.categories = UniqueValues1
                     chart_data.add_series('Series 1', UniqueValuesCount1)
                     x, y, cx, cy = Inches(2), Inches(2), Inches(6), Inches(4.5)
-                    slide.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, x, y, cx, cy, chart_data)
+                    graph_frame = slide.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, x, y, cx, cy, chart_data)
                     slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get()) + " for " + column
+                    bargraph = graph_frame.chart
+                    category_axis = bargraph.category_axis
+                    category_axis.has_major_gridlines = True
+                    #bargraph.category_axis.axis_title.text_frame.text = column
+                    #value_axis_title = bargraph.value_axis.axis_title
+                    #value_axis_title.text_frame.text = "Count"
+                '''
+                if (dic_dropdwnvar["DropdwnVar_" + column].get() == "Language Translation"):
+                    print("Executing language translation algorithm")
+
+                    Li_TranslatedText = []
+                    translator = Translator(to_lang="English")
+
+                    data = pd.read_excel(str_InputFilePath)
+                    for index, row in data.iterrows():
+                        # Find all numbers and emailIds and replace them
+                        str_inputstring = re.sub(r'[0-9]', '111', row[column])
+                        str_inputstring = re.sub(r"[A-Za-z0-9._%+-]+"r"@[A-Za-z0-9.-]+"r"\.[A-Za-z]{2,4}",
+                                                 'test@test.com', str_inputstring)
+                        str_translatedtext = translator.translate(str_inputstring)
+                        print("Translated text is: " + str_translatedtext)
+                        Li_TranslatedText.append(str_translatedtext)
+                    print(Li_TranslatedText)
+                    data['Language translated for ' + column] = Li_TranslatedText
+                    pdwriter = pd.ExcelWriter(str_InputFilePath, engine='xlsxwriter')
+                    data.to_excel(pdwriter, sheet_name=str_inputsheetname)
+                    pdwriter.save()
+                    print("Language translation algorithm execution completed")'''
+
+                if (dic_dropdwnvar["DropdwnVar_" + column].get() == "Language Detection"):
+                    print("Executing language detection algorithm")
+                    print("Output Sheet name is :"+ str_inputsheetname)
+
+                    Li_DetectedLanguage = []
+
+                    data = pd.read_excel(str_InputFilePath)
+                    for index, row in data.iterrows():
+                        # Find all numbers and emailIds and replace them
+                        str_inputstring = re.sub(r'[0-9]', '111', row[column])
+                        str_inputstring = re.sub(r"[A-Za-z0-9._%+-]+"r"@[A-Za-z0-9.-]+"r"\.[A-Za-z]{2,4}",
+                                                 'test@test.com', str_inputstring)
+                        print("Detected language is: " + detect(str_inputstring))
+                        Li_DetectedLanguage.append(detect(str_inputstring))
+                    print(Li_DetectedLanguage)
+                    data['Language Detected for ' + column] = Li_DetectedLanguage
+                    pdwriter = pd.ExcelWriter(str_InputFilePath, engine='xlsxwriter')
+                    data.to_excel(pdwriter, sheet_name=str_inputsheetname)
+                    pdwriter.save()
+                    print("Language detection algorithm execution completed")
 
                 if (dic_dropdwnvar["DropdwnVar_" + column].get() == "PieChart"):
                     print("Output Folder Path: " + str_OutputFolderPath)
                     print("Output File Name: " + str_OutputFileName)
 
                     data = pd.read_excel(str_InputFilePath)
-                    UniqueValuesCount1 = pd.value_counts(data[column])
-                    UniqueValues1 = data[column].dropna().unique().tolist()
+                    UniqueValues = data[column].dropna().unique().tolist()
+                    UniqueValuesCount = []
+
+                    for item in UniqueValues:
+                        print("Counting number of rows for: " + str(item))
+                        int_TotalUniqueCounter = 0
+
+                        for index, row in data.iterrows():
+                            if (row[column] == item):
+                                int_TotalUniqueCounter = int_TotalUniqueCounter + 1
+
+                        print("Total number of rows for " + str(item) + " are: " + str(int_TotalUniqueCounter))
+                        UniqueValuesCount.append(int_TotalUniqueCounter)
+
+                    print(UniqueValues)
+                    print(UniqueValuesCount)
+
 
                     slide = pptx.slides.add_slide(pptx.slide_layouts[5])
                     slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get()) + " for " + column
                     chart_data = ChartData()
-                    chart_data.categories = UniqueValues1
-                    chart_data.add_series('Series 1', UniqueValuesCount1)
+                    chart_data.categories = UniqueValues
+                    chart_data.add_series('Series 1', UniqueValuesCount)
 
-                    x, y, cx, cy = Inches(2), Inches(2), Inches(6), Inches(4.5)
+                    x, y, cx, cy = Inches(0.5), Inches(2), Inches(5), Inches(4)
                     chart = slide.shapes.add_chart(XL_CHART_TYPE.PIE, x, y, cx, cy, chart_data).chart
 
                     chart.has_legend = True
@@ -191,7 +264,56 @@ def OpenFilterWindow():
 
                     chart.plots[0].has_data_labels = True
                     data_labels = chart.plots[0].data_labels
-                    data_labels.number_format = '0.0000%'
+                    data_labels.position = XL_DATA_LABEL_POSITION.OUTSIDE_END
+
+
+
+                if (dic_dropdwnvar["DropdwnVar_" + column].get() == "PieChart"):
+                    print("Output Folder Path: " + str_OutputFolderPath)
+                    print("Output File Name: " + str_OutputFileName)
+
+                    data = pd.read_excel(str_InputFilePath)
+
+                    UniqueValues = data[column].dropna().unique().tolist()
+                    UniqueValuesCount = []
+
+                    for item in UniqueValues:
+                        print("Counting number of rows for: " + str(item))
+                        int_TotalUniqueCounter = 0
+
+                        for index, row in data.iterrows():
+                            if (row[column] == item):
+                                int_TotalUniqueCounter = int_TotalUniqueCounter + 1
+
+                        print("Total number of rows for " + str(item) + " are: " + str(int_TotalUniqueCounter))
+                        UniqueValuesCount.append(int_TotalUniqueCounter)
+
+                    print(UniqueValues)
+                    print(UniqueValuesCount)
+
+                    UniqueValuesCount2 = []
+                    int_TotalNumber = sum(UniqueValuesCount)
+                    print(int_TotalNumber)
+                    for num in UniqueValuesCount:
+                        int_percent = (num / int_TotalNumber)
+                        print("Percentage value is :"+str(int_percent))
+                        UniqueValuesCount2.append(int_percent)
+
+
+                    chart_data = ChartData()
+                    chart_data.categories = UniqueValues
+                    chart_data.add_series('Series 1', UniqueValuesCount2)
+
+                    x, y, cx, cy = Inches(5), Inches(2), Inches(5), Inches(4)
+                    chart = slide.shapes.add_chart(XL_CHART_TYPE.PIE, x, y, cx, cy, chart_data).chart
+
+                    chart.has_legend = True
+                    chart.legend.position = XL_LEGEND_POSITION.BOTTOM
+                    chart.legend.include_in_layout = False
+
+                    chart.plots[0].has_data_labels = True
+                    data_labels = chart.plots[0].data_labels
+                    data_labels.number_format = '0.0%'
                     data_labels.position = XL_DATA_LABEL_POSITION.OUTSIDE_END
 
                 if (dic_dropdwnvar["DropdwnVar_" + column].get() == "WordCloud"):
@@ -201,9 +323,22 @@ def OpenFilterWindow():
                     for row in InputColumn:
                         str_InputText = str_InputText + " " + str(row)
                     print(str_InputText)
+
+
+                    ListOfwords = []
+                    ListOfwords = str_WordstoExclude.get().split(",")
+                    print(ListOfwords[0])
+                    str_InputText = getattr(str_InputText, 'upper')()
+                    for word in ListOfwords:
+                        print("Removing keyword :" + word)
+
+                        word = getattr(word, 'upper')()
+                        str_InputText = str_InputText.replace(word, "")
+
+
                     mask = np.array(Image.open("Images\\cloud.png"))
                     stopwords = set(STOPWORDS)
-                    wc = WordCloud(background_color="black",mask=mask,max_words=200,stopwords=stopwords)
+                    wc = WordCloud(background_color="black", mask=mask, max_words=200, stopwords=stopwords)
                     wc.generate(str_InputText)
                     wc.to_file("Images\\wc.png")
                     slide = pptx.slides.add_slide(pptx.slide_layouts[5])
@@ -226,10 +361,11 @@ def OpenFilterWindow():
                     words = str_filteredsentence.split()
 
                     for word in words:
-                        if word in counts:
-                            counts[word] += 1
-                        else:
-                            counts[word] = 1
+                        if (word != "-"):
+                            if word in counts:
+                                counts[word] += 1
+                            else:
+                                counts[word] = 1
 
                     sorted_d = dict(sorted(counts.items(), key=operator.itemgetter(1), reverse=True))
                     print(sorted_d)
@@ -253,10 +389,9 @@ def OpenFilterWindow():
 
                     l1 = list(sorted_d.keys())
                     l2 = list(sorted_d.values())
-                    print(len(l1))
-                    print(len(l2))
 
                     for i in l1:
+
                         cell = table1.cell(int_cellcounter, 0)
                         cell.text = i
 
@@ -264,12 +399,15 @@ def OpenFilterWindow():
                         cell2.text = str(l2[int_cellcounter - 1])
 
                         int_cellcounter = int_cellcounter + 1
-                        print(int_cellcounter)
+
                         if (int_cellcounter == 14):
                             break
 
-        pptx.save(str_OutputFolderPath)
-        mbox.showinfo("info","The ppt is saved at path :"+str_OutputFolderPath, parent=newWindow)
+        if (dic_dropdwnvar["DropdwnVar_" + column].get() != "Language Detection") and (dic_dropdwnvar["DropdwnVar_" + column].get() != "Language Translation"):
+            pptx.save(str_OutputFolderPath)
+            mbox.showinfo("info","The ppt is saved at path :"+str_OutputFolderPath, parent=newWindow)
+
+
 
     # Get list of all columns in excel
     global Li_ColumnNames
@@ -277,6 +415,8 @@ def OpenFilterWindow():
     str_ExcelFilepath = str_InputFilePath
     data = pd.read_excel(str_ExcelFilepath)
     Li_ColumnNames = data.columns
+
+
 
     # Building a new window
     newWindow = Tk()
@@ -297,7 +437,7 @@ def OpenFilterWindow():
     newWindow_canvas.create_image(0, 0, image=img_BgImg, anchor="nw")
 
     # build title and project name
-    newWindow_canvas.create_text(680, 35, text="Analytics Dashboard", font=("comicssansns", 20, "bold"), fill='White')
+    newWindow_canvas.create_text(680, 35, text="SmarTAMM Analytics Solution", font=("comicssansns", 20, "bold"), fill='White')
     LogoImg = ImageTk.PhotoImage(Image.open("Images\\TSysLogo.PNG"))
     newWindow_canvas.create_image(680, 100, image=LogoImg)
 
@@ -319,13 +459,18 @@ def OpenFilterWindow():
     # build label Column Name
     newWindow_canvas.create_text(540, 170, text="Select Column Names:", font=("comicssansns", 10, "bold"), fill='White')
 
+    # build Exclude keywords from WordCloud input box
+    newWindow_canvas.create_text(205, 310, text="Enter comma separated words to be excluded in WordCloud:", font=("comicssansns", 10, "bold"), fill='White')
+    str_WordstoExclude = Entry(newWindow, width=50)
+    newWindow_canvas.create_window(170, 340, window=str_WordstoExclude)
+
     # Submit button on new window
-    Btn_Submit = Button(newWindow, text='<<< Reset <<<', command=BuildGraphs)
-    Win_Btn_Submit = newWindow_canvas.create_window(75, 380, window=Btn_Submit)
+    #Btn_Submit = Button(newWindow, text='<<< Reset <<<', command=BuildGraphs)
+    #Win_Btn_Submit = newWindow_canvas.create_window(75, 380, window=Btn_Submit)
 
     # Submit button on new window
     Btn_Submit = Button(newWindow, text='>>> Submit >>>', command=BuildGraphs)
-    Win_Btn_Submit = newWindow_canvas.create_window(200, 380, window=Btn_Submit)
+    Win_Btn_Submit = newWindow_canvas.create_window(200, 500, window=Btn_Submit)
 
     # Logic to display columns as a filter options.
 
@@ -333,7 +478,7 @@ def OpenFilterWindow():
     int_Rowcounter = 220
     int_ColumnCounter = 550
     int_Dropdowncounter = 0
-    BGOptions1 = ["PieChart", "BarGraph", "WordCloud", "WordCount"]
+    BGOptions1 = ["PieChart", "BarGraph", "WordCloud", "WordCount", "Language Detection", "Language Translation"]
 
     for i in Li_ColumnNames:
 
@@ -380,8 +525,8 @@ if(bol_loginsuccess==True):
 
     # GUI Framework
     app_root.geometry("500x400")
-    app_root.maxsize(500, 400)
-    app_root.minsize(500, 400)
+    app_root.maxsize(500, 500)
+    app_root.minsize(500, 500)
 
     app_root.title("Analytics Dashboard by T-systems")
     app_root.configure(background="black")
@@ -393,7 +538,7 @@ if(bol_loginsuccess==True):
     app_canvas.create_image(0, 0, image=image1, anchor="nw")
 
     # build title and project name
-    app_canvas.create_text(250, 35, text="Analytics Dashboard", font=("comicssansns", 20, "bold"), fill='White')
+    app_canvas.create_text(250, 35, text="SmarTAMM Analytics Solution", font=("comicssansns", 20, "bold"), fill='White')
     LogoImg = ImageTk.PhotoImage(Image.open("Images\\TSysLogo.PNG"))
     app_canvas.create_image(250, 100, image=LogoImg)
 
@@ -411,19 +556,24 @@ if(bol_loginsuccess==True):
     app_canvas.create_line(1, 230, 1360, 230, fill="#fb0")
 
     # build output folder input box
-    app_canvas.create_text(95, 250, text="Enter Output Folder Path:", font=("comicssansns", 10, "bold"), fill='White')
-    OutputFolderPath = Entry(app_root, width=50)
-    app_canvas.create_window(170, 280, window=OutputFolderPath)
+    app_canvas.create_text(105, 250, text="Enter Input Worksheet Name:", font=("comicssansns", 10, "bold"), fill='White')
+    str_inputsheetname = Entry(app_root, width=50)
+    app_canvas.create_window(170, 280, window=str_inputsheetname)
 
     # Add separator line
     app_canvas.create_line(1, 300, 1360, 300, fill="#fb0")
 
+    # build output folder input box
+    app_canvas.create_text(105, 330, text="Enter Output Folder path:", font=("comicssansns", 10, "bold"), fill='White')
+    OutputFolderPath = Entry(app_root, width=50)
+    app_canvas.create_window(170, 360, window=OutputFolderPath)
+
     # Add Generate Filter Button
     Btn_GenerateFilters = Button(app_root, text='Generate Filters > > >', command=GenerateFilters)
-    Win_BtnGenerateFiltersWindow = app_canvas.create_window(80, 330, window=Btn_GenerateFilters)
+    Win_BtnGenerateFiltersWindow = app_canvas.create_window(80, 430, window=Btn_GenerateFilters)
 
     # Add separator line
-    app_canvas.create_line(1, 355, 1360, 355, fill="#fb0")
+    app_canvas.create_line(1, 380, 1360, 380, fill="#fb0")
 
     #Add separator line
     app_canvas.create_line(1, 500, 1360, 500, fill="#fb0")
