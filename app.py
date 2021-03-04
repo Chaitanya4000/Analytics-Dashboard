@@ -6,7 +6,7 @@ from PIL import ImageTk, Image
 import operator
 import time
 import os
-from langdetect import detect
+import langid
 import re
 from translate import Translator
 import pandas as pd
@@ -25,6 +25,7 @@ from pptx.util import Cm
 from wordcloud import WordCloud, STOPWORDS
 from gensim.parsing.preprocessing import remove_stopwords
 from tkinter import messagebox as mbox
+import win32com.client as win32
 
 # >>>>>>>>>>>>>>> Initialize Variables <<<<<<<<<<<<<<<
 str_OutputFolderPath = ""
@@ -83,21 +84,22 @@ class Login:
     def login_function(self):
 
         if self.txt_pass.get()=="" or self.txt_user.get()=="":
-            messagebox.showerror("Error","All fields are required",parent=self.app)
+            #messagebox.showerror("Error","All fields are required",parent=self.app)
         elif self.txt_pass.get()!="admin" or self.txt_user.get()!="admin" :
-            messagebox.showerror("Error","Invalid Username/Password",parent=self.app)
+            #messagebox.showerror("Error","Invalid Username/Password",parent=self.app)
         else:
             KillMainApp()
             Login
             global bol_loginsuccess
-            bol_loginsuccess=True
+
+bol_loginsuccess=True
 
 
 
             #messagebox.showinfo("Welcome",f"Welcome {self.txt_user.get()}\nYour Password: {self.txt_pass.get()}", parent=self.app)
 
 app=Tk()
-obj=Login(app)
+#obj=Login(app)
 app.mainloop()
 
 
@@ -116,7 +118,7 @@ def GenerateFilters():
     global str_inputsheetname
     global str_OutputFolderPath
     str_OutputFolderPath = str(OutputFolderPath.get())
-    str_inputsheetname = str(str_inputsheetname.get())
+    str_inputsheetname = str(Inputsheetname.get())
     str_OutputFileName = os.path.basename(str_OutputFolderPath)
     print("Output folder path is: " + str_OutputFolderPath)
     print("Output file name is: " + str_OutputFileName)
@@ -146,6 +148,16 @@ def file_opener():
 
 def OpenFilterWindow():
 
+    def SendMail():
+        outlook = win32.Dispatch('outlook.application')
+        mail = outlook.CreateItem(0)
+        mail.To = str_ReceiverMailID.get()
+        mail.Subject = str_MailSubject.get()
+        mail.Body = str_MailBody.get()
+        attachment = str_OutputFolderPath
+        mail.Attachments.Add(attachment)
+        mail.Send()
+
     def BuildGraphs():
         print("Build graph function executing...")
 
@@ -165,7 +177,7 @@ def OpenFilterWindow():
                     print("Output Folder Path: " + str_OutputFolderPath)
                     print("Output File Name: " + str_OutputFileName)
 
-                    data = pd.read_excel(str_InputFilePath)
+                    data = pd.read_excel(str_InputFilePath,str_inputsheetname)
                     UniqueValuesCount1 = pd.value_counts(data[column])
                     UniqueValues1 = data[column].dropna().unique().tolist()
 
@@ -182,14 +194,12 @@ def OpenFilterWindow():
                     #bargraph.category_axis.axis_title.text_frame.text = column
                     #value_axis_title = bargraph.value_axis.axis_title
                     #value_axis_title.text_frame.text = "Count"
-                '''
+
                 if (dic_dropdwnvar["DropdwnVar_" + column].get() == "Language Translation"):
                     print("Executing language translation algorithm")
-
                     Li_TranslatedText = []
                     translator = Translator(to_lang="English")
-
-                    data = pd.read_excel(str_InputFilePath)
+                    data = pd.read_excel(str_InputFilePath,str_inputsheetname)
                     for index, row in data.iterrows():
                         # Find all numbers and emailIds and replace them
                         str_inputstring = re.sub(r'[0-9]', '111', row[column])
@@ -203,7 +213,7 @@ def OpenFilterWindow():
                     pdwriter = pd.ExcelWriter(str_InputFilePath, engine='xlsxwriter')
                     data.to_excel(pdwriter, sheet_name=str_inputsheetname)
                     pdwriter.save()
-                    print("Language translation algorithm execution completed")'''
+                    print("Language translation algorithm execution completed")
 
                 if (dic_dropdwnvar["DropdwnVar_" + column].get() == "Language Detection"):
                     print("Executing language detection algorithm")
@@ -211,14 +221,15 @@ def OpenFilterWindow():
 
                     Li_DetectedLanguage = []
 
-                    data = pd.read_excel(str_InputFilePath)
+                    data = pd.read_excel(str_InputFilePath,str_inputsheetname)
                     for index, row in data.iterrows():
                         # Find all numbers and emailIds and replace them
-                        str_inputstring = re.sub(r'[0-9]', '111', row[column])
+                        str_inputstring = re.sub(r'[0-9]', '1', row[column])
                         str_inputstring = re.sub(r"[A-Za-z0-9._%+-]+"r"@[A-Za-z0-9.-]+"r"\.[A-Za-z]{2,4}",
                                                  'test@test.com', str_inputstring)
-                        print("Detected language is: " + detect(str_inputstring))
-                        Li_DetectedLanguage.append(detect(str_inputstring))
+                        print(str_inputstring)
+                        print("Detected language is: " + str(langid.classify(str_inputstring)))
+                        Li_DetectedLanguage.append(str(langid.classify(str_inputstring)))
                     print(Li_DetectedLanguage)
                     data['Language Detected for ' + column] = Li_DetectedLanguage
                     pdwriter = pd.ExcelWriter(str_InputFilePath, engine='xlsxwriter')
@@ -230,7 +241,7 @@ def OpenFilterWindow():
                     print("Output Folder Path: " + str_OutputFolderPath)
                     print("Output File Name: " + str_OutputFileName)
 
-                    data = pd.read_excel(str_InputFilePath)
+                    data = pd.read_excel(str_InputFilePath,str_inputsheetname)
                     UniqueValues = data[column].dropna().unique().tolist()
                     UniqueValuesCount = []
 
@@ -272,7 +283,7 @@ def OpenFilterWindow():
                     print("Output Folder Path: " + str_OutputFolderPath)
                     print("Output File Name: " + str_OutputFileName)
 
-                    data = pd.read_excel(str_InputFilePath)
+                    data = pd.read_excel(str_InputFilePath,str_inputsheetname)
 
                     UniqueValues = data[column].dropna().unique().tolist()
                     UniqueValuesCount = []
@@ -317,7 +328,7 @@ def OpenFilterWindow():
                     data_labels.position = XL_DATA_LABEL_POSITION.OUTSIDE_END
 
                 if (dic_dropdwnvar["DropdwnVar_" + column].get() == "WordCloud"):
-                    data = pd.read_excel(str_InputFilePath)
+                    data = pd.read_excel(str_InputFilePath,str_inputsheetname)
                     InputColumn = data[column].dropna()
                     str_InputText = " "
                     for row in InputColumn:
@@ -337,10 +348,10 @@ def OpenFilterWindow():
 
 
                     mask = np.array(Image.open("Images\\cloud.png"))
-                    stopwords = set(STOPWORDS)
-                    wc = WordCloud(background_color="black", mask=mask, max_words=200, stopwords=stopwords)
-                    wc.generate(str_InputText)
-                    wc.to_file("Images\\wc.png")
+                    #stopwords = set(STOPWORDS)
+                    #wc = WordCloud(background_color="black", mask=mask, max_words=200, stopwords=stopwords)
+                    #wc.generate(str_InputText)
+                    #wc.to_file("Images\\wc.png")
                     slide = pptx.slides.add_slide(pptx.slide_layouts[5])
                     slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get()) + " for " + column
                     img_WordcloudImage = "Images\\wc.png"
@@ -349,16 +360,17 @@ def OpenFilterWindow():
                     add_picture = slide.shapes.add_picture(img_WordcloudImage, from_left, from_top)
 
                 if (dic_dropdwnvar["DropdwnVar_" + column].get() == "WordCount"):
-                    data = pd.read_excel(str_InputFilePath)
+                    data = pd.read_excel(str_InputFilePath,str_inputsheetname)
                     InputColumn = data[column].dropna()
                     str_InputText = " "
                     for row in InputColumn:
                         str_InputText = str_InputText + " " + str(row)
 
-                    str_filteredsentence = remove_stopwords(str_InputText)
-                    print(str_filteredsentence)
+                    #str_filteredsentence = remove_stopwords(str_InputText)
+                    #print(str_filteredsentence)
                     counts = dict()
-                    words = str_filteredsentence.split()
+                    #words = str_filteredsentence.split()
+
 
                     for word in words:
                         if (word != "-"):
@@ -402,21 +414,17 @@ def OpenFilterWindow():
 
                         if (int_cellcounter == 14):
                             break
-
+                    '''
         if (dic_dropdwnvar["DropdwnVar_" + column].get() != "Language Detection") and (dic_dropdwnvar["DropdwnVar_" + column].get() != "Language Translation"):
             pptx.save(str_OutputFolderPath)
             mbox.showinfo("info","The ppt is saved at path :"+str_OutputFolderPath, parent=newWindow)
-
-
 
     # Get list of all columns in excel
     global Li_ColumnNames
     print("ExcelFilePath: " + str_InputFilePath)
     str_ExcelFilepath = str_InputFilePath
-    data = pd.read_excel(str_ExcelFilepath)
+    data = pd.read_excel(str_ExcelFilepath,str_inputsheetname)
     Li_ColumnNames = data.columns
-
-
 
     # Building a new window
     newWindow = Tk()
@@ -445,32 +453,63 @@ def OpenFilterWindow():
     newWindow_canvas.create_line(1, 150, 2000, 150, fill="#fb0")
 
     # build input filepath input box
-    newWindow_canvas.create_text(170, 200, text="Input: " + str_InputFileName, font=("comicssansns", 10, "bold"),
+    newWindow_canvas.create_text(100, 180, text="Input: " + str_InputFileName, font=("comicssansns", 10, "bold"),
                                  fill='White')
 
     # build input filepath input box
-    newWindow_canvas.create_text(170, 260, text="Output: " + str_OutputFileName, font=("comicssansns", 10, "bold"),
+    newWindow_canvas.create_text(100, 220, text="Output: " + str_OutputFileName, font=("comicssansns", 10, "bold"),
                                  fill='White')
 
+    # Add separator line
+    newWindow_canvas.create_line(1, 240, 430, 240, fill="#fb0")
+
+
     # build label Column Name
-    newWindow_canvas.create_text(740, 170, text="Select Graph Type::", font=("comicssansns", 10, "bold"),
+    newWindow_canvas.create_text(740, 170, text="Select Graph Type:", font=("comicssansns", 10, "bold"),
                                  fill='White')
 
     # build label Column Name
     newWindow_canvas.create_text(540, 170, text="Select Column Names:", font=("comicssansns", 10, "bold"), fill='White')
 
     # build Exclude keywords from WordCloud input box
-    newWindow_canvas.create_text(205, 310, text="Enter comma separated words to be excluded in WordCloud:", font=("comicssansns", 10, "bold"), fill='White')
+    newWindow_canvas.create_text(205, 270, text="Enter comma separated words to be excluded in WordCloud:", font=("comicssansns", 10, "bold"), fill='White')
     str_WordstoExclude = Entry(newWindow, width=50)
-    newWindow_canvas.create_window(170, 340, window=str_WordstoExclude)
+    newWindow_canvas.create_window(170, 300, window=str_WordstoExclude)
+
+    # build Exclude confidential data input box
+    newWindow_canvas.create_text(205, 330, text="Enter comma separated words to be excluded from analysis:", font=("comicssansns", 10, "bold"), fill='White')
+    str_NewWordstoExclude = Entry(newWindow, width=50)
+    newWindow_canvas.create_window(170, 360, window=str_NewWordstoExclude)
 
     # Submit button on new window
-    #Btn_Submit = Button(newWindow, text='<<< Reset <<<', command=BuildGraphs)
-    #Win_Btn_Submit = newWindow_canvas.create_window(75, 380, window=Btn_Submit)
+    Btn_Submit = Button(newWindow, text='Generate output >>>', command=BuildGraphs)
+    Win_Btn_Submit = newWindow_canvas.create_window(80, 400, window=Btn_Submit)
 
-    # Submit button on new window
-    Btn_Submit = Button(newWindow, text='>>> Submit >>>', command=BuildGraphs)
-    Win_Btn_Submit = newWindow_canvas.create_window(200, 500, window=Btn_Submit)
+    # Add separator line
+    newWindow_canvas.create_line(1, 430, 430, 430, fill="#fb0")
+
+    # Add separator line
+    newWindow_canvas.create_line(430,150,430,2000, fill="#fb0")
+
+    # build Enter from mailID
+    newWindow_canvas.create_text(90, 460, text="Enter receiver's mailID:", font=("comicssansns", 10, "bold"), fill='White')
+    str_ReceiverMailID = Entry(newWindow, width=50)
+    newWindow_canvas.create_window(170, 490, window=str_ReceiverMailID)
+
+    # build Enter From mailID Password
+    newWindow_canvas.create_text(75, 520, text="Enter mail subject:", font=("comicssansns", 10, "bold"), fill='White')
+    str_MailSubject = Entry(newWindow, width=50)
+    newWindow_canvas.create_window(170, 550, window=str_MailSubject)
+
+    # build To mailID
+    newWindow_canvas.create_text(70, 580, text="Enter mail body:", font=("comicssansns", 10, "bold"), fill='White')
+    str_MailBody = Entry(newWindow, width=50)
+    newWindow_canvas.create_window(170, 610, window=str_MailBody)
+
+
+    #Send output mail button on new window
+    Btn_SendMail = Button(newWindow, text='Send Output Via Mail >>>', command=SendMail)
+    Win_Btn_Submit = newWindow_canvas.create_window(100, 660, window=Btn_SendMail)
 
     # Logic to display columns as a filter options.
 
@@ -557,8 +596,8 @@ if(bol_loginsuccess==True):
 
     # build output folder input box
     app_canvas.create_text(105, 250, text="Enter Input Worksheet Name:", font=("comicssansns", 10, "bold"), fill='White')
-    str_inputsheetname = Entry(app_root, width=50)
-    app_canvas.create_window(170, 280, window=str_inputsheetname)
+    Inputsheetname = Entry(app_root, width=50)
+    app_canvas.create_window(170, 280, window=Inputsheetname)
 
     # Add separator line
     app_canvas.create_line(1, 300, 1360, 300, fill="#fb0")
@@ -579,4 +618,3 @@ if(bol_loginsuccess==True):
     app_canvas.create_line(1, 500, 1360, 500, fill="#fb0")
 
     app_root.mainloop()
-
