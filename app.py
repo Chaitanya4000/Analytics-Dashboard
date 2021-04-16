@@ -6,14 +6,15 @@ from PIL import ImageTk, Image
 import operator
 import time
 import os
-import langid
+from langdetect import detect
 import re
+from colorama import win32
 from translate import Translator
 import pandas as pd
 import numpy as np
 from tkinter.ttk import Progressbar
 import matplotlib.pyplot as plt
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from datetime import datetime
 from pptx import Presentation
 from pptx.chart.data import ChartData
@@ -27,7 +28,8 @@ from nltk.corpus import stopwords
 from wordcloud import WordCloud, STOPWORDS
 from gensim.parsing.preprocessing import remove_stopwords
 from tkinter import messagebox as mbox
-import win32com.client as win32
+import multiprocessing
+#import pypiwin32.client as win32
 
 # >>>>>>>>>>>>>>> Initialize Variables <<<<<<<<<<<<<<<
 str_OutputFolderPath = ""
@@ -45,7 +47,6 @@ bol_loginsuccess=False
 
 def KillMainApp():
     app.destroy()
-
 
 class Login:
     def __init__(self,app):
@@ -86,9 +87,9 @@ class Login:
     def login_function(self):
 
         if self.txt_pass.get()=="" or self.txt_user.get()=="":
-            #messagebox.showerror("Error","All fields are required",parent=self.app)
+            messagebox.showerror("Error","All fields are required",parent=self.app)
         elif self.txt_pass.get()!="admin" or self.txt_user.get()!="admin" :
-            #messagebox.showerror("Error","Invalid Username/Password",parent=self.app)
+            messagebox.showerror("Error","Invalid Username/Password",parent=self.app)
         else:
             KillMainApp()
             Login
@@ -103,14 +104,23 @@ app=Tk()
 obj=Login(app)
 app.mainloop()
 
-
-
 # >>>>>>>>>>>>>>> All functions that are used in applications <<<<<<<<<<<<<<<
 
 # KillMainApp function will kill the main app window
+
+
 def KillMainApp():
     app_root.destroy()
 
+
+#Detect Language Function:
+def langdetect(dataframe,columnname,str_InputFilePath,str_inputsheetname,q):
+    for index, row in dataframe.iterrows():
+        str_inputstring = re.sub(r'[0-9]', '1', row[columnname])
+        str_inputstring = re.sub(r"[A-Za-z0-9._%+-]+"r"@[A-Za-z0-9.-]+"r"\.[A-Za-z]{2,4}",'test@test.com', str_inputstring)
+        print("Detected language is: " + str(detect(str_inputstring)))
+        q.put (str(detect(str_inputstring)))
+    print("Language Detected")
 
 
 # GenerateFilters function is called by generate filters button from main app.
@@ -160,6 +170,8 @@ def OpenFilterWindow():
         mail.Send()
 
     def BuildGraphs():
+
+
         print("Build graph function executing...")
 
         pptx = Presentation("Templates\Template.pptx")
@@ -172,8 +184,44 @@ def OpenFilterWindow():
         print("Output Folder Path: " + str_OutputFolderPath)
         print("Output File Name: " + str_OutputFileName)
 
+        #if (Var_EnhancedChartButton.get() == 1):
+
+            #categoryValues = []
+            #categorycolumn = str_Category.get()
+            #seriescolumn = str_series.get()
+
+            #df = (data[categorycolumn].value_counts())
+            #categoryValues = df.index.to_list()
+
+            #df = (data[seriescolumn].value_counts())
+            #SeriesValuesName = df.index.to_list()
+
+            #slide = pptx.slides.add_slide(pptx.slide_layouts[5])
+            #chart_data = ChartData()
+            #chart_data.categories = categoryValues
+
+            #seriesValues = []
+            #for item in categoryValues:
+             #   for name in SeriesValuesName:
+              #      helloo = item
+               #     hi = name
+                #    newdf = data.query("{0} == @helloo & {1} == @hi".format(categorycolumn,seriescolumn))
+                 #   seriesValues.append(len(newdf.index))
+
+                #chart_data.add_series('series', seriesValues)
+            #x, y, cx, cy = Inches(2), Inches(2), Inches(6), Inches(4.5)
+            #graph_frame = slide.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, x, y, cx, cy, chart_data)
+            #slide.shapes.title.text = "Test Chart"
+            #bargraph = graph_frame.chart
+            #category_axis = bargraph.category_axis
+            #category_axis.has_major_gridlines = True
+
         int_CounterForColumn = 0
+
         for column in Li_ColumnNames:
+            prgbar['value'] += 20
+            newWindow_canvas.update_idletasks()
+
             print("Checking for column number: "+str(int_CounterForColumn)+" "+str(column))
             if (int_CounterForColumn == 20):
                 break
@@ -196,15 +244,13 @@ def OpenFilterWindow():
                     chart_data = ChartData()
                     chart_data.categories = UniqueValues
                     chart_data.add_series('Series 1', UniqueValuesCount)
+
                     x, y, cx, cy = Inches(2), Inches(2), Inches(6), Inches(4.5)
                     graph_frame = slide.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, x, y, cx, cy, chart_data)
                     slide.shapes.title.text = str(dic_dropdwnvar["DropdwnVar_" + column].get()) + " for " + column
                     bargraph = graph_frame.chart
                     category_axis = bargraph.category_axis
                     category_axis.has_major_gridlines = True
-                    #bargraph.category_axis.axis_title.text_frame.text = column
-                    #value_axis_title = bargraph.value_axis.axis_title
-                    #value_axis_title.text_frame.text = "Count"
 
                     #Key observations on basis of analysis
                     if (Var_InterpretationButton.get() == 1):
@@ -271,24 +317,47 @@ def OpenFilterWindow():
                     pdwriter.save()
                     print("Language translation algorithm execution completed")
 
-                if (dic_dropdwnvar["DropdwnVar_" + column].get() == "Language Detection"):
+                if (dic_dropdwnvar["DropdwnVar_" + column].get() == "Lang Detect"):
                     print("Executing language detection algorithm")
                     print("Output Sheet name is :"+ str_inputsheetname)
 
                     Li_DetectedLanguage = []
+                    np.array_split(data, 4)
 
-                    data = pd.read_excel(str_InputFilePath,str_inputsheetname)
-                    for index, row in data.iterrows():
-                        # Find all numbers and emailIds and replace them
-                        str_inputstring = re.sub(r'[0-9]', '1', row[column])
-                        str_inputstring = re.sub(r"[A-Za-z0-9._%+-]+"r"@[A-Za-z0-9.-]+"r"\.[A-Za-z]{2,4}",
-                                                 'test@test.com', str_inputstring)
-                        print(str_inputstring)
-                        print("Detected language is: " + str(langid.classify(str_inputstring)))
-                        Li_DetectedLanguage.append(str(langid.classify(str_inputstring)))
-                    print(Li_DetectedLanguage)
+                    if __name__ == "__main__":
+
+                        q = multiprocessing.Queue()
+
+                        p1 = multiprocessing.Process(target=langdetect,
+                                                     args=((np.array_split(data, 4)[0]), column, str_InputFilePath, str_inputsheetname, q))
+                        p2 = multiprocessing.Process(target=langdetect,
+                                                     args=((np.array_split(data, 4)[1]), column, str_InputFilePath, str_inputsheetname, q))
+                        p3 = multiprocessing.Process(target=langdetect,
+                                                     args=((np.array_split(data, 4)[2]), column, str_InputFilePath, str_inputsheetname, q))
+                        p4 = multiprocessing.Process(target=langdetect,
+                                                     args=((np.array_split(data, 4)[3]), column, str_InputFilePath, str_inputsheetname, q))
+
+                        p1.start()
+                        p2.start()
+                        p3.start()
+                        p4.start()
+
+                        p1.join()
+                        p2.join()
+                        p3.join()
+                        p4.join()
+
+                        while q.empty() is False:
+                            while q.qsize() > 0:
+                                Li_DetectedLanguage.append(q.get())
+                            print(Li_DetectedLanguage)
+
+                        print("Done!")
+
+
                     data['Language Detected for ' + column] = Li_DetectedLanguage
-                    pdwriter = pd.ExcelWriter(str_InputFilePath, engine='xlsxwriter')
+                    print(str_InputFilePath)
+                    pdwriter = pd.ExcelWriter("C:\\Users\\A115618799\\Desktop\\Chaitanya\\PythonProjects\\AnalyticsDashboard_v2\\Vitesco Data\\Test.xlsx", engine='xlsxwriter')
                     data.to_excel(pdwriter, sheet_name=str_inputsheetname)
                     pdwriter.save()
                     print("Language detection algorithm execution completed")
@@ -331,6 +400,7 @@ def OpenFilterWindow():
                     chart_data = ChartData()
                     chart_data.categories = UniqueValues
                     chart_data.add_series('Series 1', UniqueValuesCount2)
+
 
                     x, y, cx, cy = Inches(5), Inches(2), Inches(5), Inches(4)
                     chart = slide.shapes.add_chart(XL_CHART_TYPE.PIE, x, y, cx, cy, chart_data).chart
@@ -412,7 +482,7 @@ def OpenFilterWindow():
 
                     mask = np.array(Image.open("Images\\cloud.png"))
                     stopwords = set(STOPWORDS)
-                    wc = WordCloud(background_color="black", mask=mask, max_words=200, stopwords=stopwords)
+                    wc = WordCloud(background_color="black", mask=mask, max_words=200, stopwords=stopwords,collocations=False)
                     wc.generate(str_InputText)
                     wc.to_file("Images\\wc.png")
                     slide = pptx.slides.add_slide(pptx.slide_layouts[5])
@@ -439,6 +509,7 @@ def OpenFilterWindow():
                         word = getattr(word, 'upper')()
                         str_InputText = str_InputText.replace(word, "")
 
+                    from nltk.corpus import stopwords
                     stop_words = set(stopwords.words('english'))
                     stop_words.update(")", ".", ",", "!", "'", "(", "-", "--", "&", ":", "/", "'\'", "n't", "*")
                     stop_words.add("--")
@@ -451,7 +522,7 @@ def OpenFilterWindow():
 
                     mask = np.array(Image.open("Images\\cloud.png"))
                     stopwords = set(STOPWORDS)
-                    wc = WordCloud(background_color="black", mask=mask, max_words=200, stopwords=stopwords)
+                    wc = WordCloud(background_color="black", mask=mask, max_words=200, stopwords=stopwords,collocations=False)
                     wc.generate(str_BigramOutput)
                     wc.to_file("Images\\wc1.png")
                     slide = pptx.slides.add_slide(pptx.slide_layouts[5])
@@ -522,6 +593,7 @@ def OpenFilterWindow():
             pptx.save(str_OutputFolderPath)
             mbox.showinfo("info","The ppt is saved at path :"+str_OutputFolderPath, parent=newWindow)
 
+
     # Get list of all columns in excel
     global Li_ColumnNames
     print("ExcelFilePath: " + str_InputFilePath)
@@ -542,30 +614,26 @@ def OpenFilterWindow():
     newWindow.configure(background="black")
 
     # Add backgroundImage
-    img_BgImg = ImageTk.PhotoImage(Image.open("Images\\BgImg.PNG"))
+    img_BgImg = ImageTk.PhotoImage(Image.open("Images\\.img\\BgImg.PNG"))
     newWindow_canvas = Canvas(newWindow, width=1080, height=2160)
     newWindow_canvas.pack(fill="both", expand=True)
     newWindow_canvas.create_image(0, 0, image=img_BgImg, anchor="nw")
 
     # build title and project name
     newWindow_canvas.create_text(680, 35, text="SmarTAMM Analytics Solution", font=("comicssansns", 20, "bold"), fill='White')
-    LogoImg = ImageTk.PhotoImage(Image.open("Images\\TSysLogo.PNG"))
+    LogoImg = ImageTk.PhotoImage(Image.open("Images\\.img\\TSysLogo.PNG"))
     newWindow_canvas.create_image(680, 100, image=LogoImg)
+
+    #Add progress bar to window
+    prgbar = Progressbar(newWindow, orient=HORIZONTAL, length=300 , mode="determinate")
+    Win_prgbar = newWindow_canvas.create_window(1170, 100, window=prgbar)
+
+    newWindow_canvas.create_text(1170, 120, text="Progress Tracker", font=("comicssansns", 10, "bold"),
+                                 fill='White')
+
 
     # Add separator line
     newWindow_canvas.create_line(1, 150, 2000, 150, fill="#fb0")
-
-    # build input filepath input box
-    newWindow_canvas.create_text(100, 180, text="Input: " + str_InputFileName, font=("comicssansns", 10, "bold"),
-                                 fill='White')
-
-    # build input filepath input box
-    newWindow_canvas.create_text(100, 220, text="Output: " + str_OutputFileName, font=("comicssansns", 10, "bold"),
-                                 fill='White')
-
-    # Add separator line
-    newWindow_canvas.create_line(1, 240, 430, 240, fill="#fb0")
-
 
     # build label Column Name
     newWindow_canvas.create_text(740, 170, text="Select Graph Type:", font=("comicssansns", 10, "bold"),
@@ -575,38 +643,48 @@ def OpenFilterWindow():
     newWindow_canvas.create_text(540, 170, text="Select Column Names:", font=("comicssansns", 10, "bold"), fill='White')
 
     # build Exclude keywords from WordCloud input box
-    newWindow_canvas.create_text(210, 270, text="Enter comma separated words to be excluded in WordCloud:", font=("comicssansns", 10, "bold"), fill='White')
+    newWindow_canvas.create_text(210, 170, text="Enter comma separated words to be excluded in WordCloud:", font=("comicssansns", 10, "bold"), fill='White')
     str_WordstoExclude = Entry(newWindow, width=50)
-    newWindow_canvas.create_window(170, 300, window=str_WordstoExclude)
-
-    # build Exclude confidential data input box
-    newWindow_canvas.create_text(190, 330, text="Enter comma separated words for text anonymization:", font=("comicssansns", 10, "bold"), fill='White')
-    str_NewWordstoExclude = Entry(newWindow, width=50)
-    newWindow_canvas.create_window(170, 360, window=str_NewWordstoExclude)
+    newWindow_canvas.create_window(170, 200, window=str_WordstoExclude)
 
     #Interpretation based on charts
     Var_InterpretationButton = IntVar()
-    Chk_InterpretationButton = Checkbutton(newWindow_canvas,variable=Var_InterpretationButton, text="Enable Smart Interpretation", width=20)
-    newWindow_canvas.create_window(100, 400, window=Chk_InterpretationButton)
+    Chk_InterpretationButton = Checkbutton(newWindow_canvas,variable=Var_InterpretationButton, text="Enable Interpretation", width=20)
+    newWindow_canvas.create_window(100, 250, window=Chk_InterpretationButton)
+
+    # build category input box
+    #newWindow_canvas.create_text(155, 300, text="Enter category column for enhanced charts:",font=("comicssansns", 10, "bold"), fill='White')
+    #str_Category = Entry(newWindow, width=50)
+    #newWindow_canvas.create_window(170, 330, window=str_Category)
+
+    # build series input box
+    #newWindow_canvas.create_text(150, 360, text="Enter series column for enhanced charts:",font=("comicssansns", 10, "bold"), fill='White')
+    #str_series = Entry(newWindow, width=50)
+    #newWindow_canvas.create_window(170, 390, window=str_series)
+
+    #Enhanced Chart
+    #Var_EnhancedChartButton = IntVar()
+    #Chk_EnhancedChartButton = Checkbutton(newWindow_canvas,variable=Var_EnhancedChartButton, text="Create Enhanced Chart", width=20)
+    #newWindow_canvas.create_window(100, 440, window=Chk_EnhancedChartButton)
 
     # Submit button on new window
     Btn_Submit = Button(newWindow, text='Generate output >>>', command=BuildGraphs)
-    Win_Btn_Submit = newWindow_canvas.create_window(80, 460, window=Btn_Submit)
+    Win_Btn_Submit = newWindow_canvas.create_window(80, 330, window=Btn_Submit)
 
     # Add separator line
-    newWindow_canvas.create_line(1, 490, 430, 490, fill="#fb0")
+    newWindow_canvas.create_line(1, 510, 430, 510, fill="#fb0")
 
     # Add separator line
     newWindow_canvas.create_line(430,150,430,2000, fill="#fb0")
 
     # build Enter from mailID
-    newWindow_canvas.create_text(90, 520, text="Enter receiver's mailID:", font=("comicssansns", 10, "bold"), fill='White')
+    newWindow_canvas.create_text(90, 550, text="Enter receiver's mailID:", font=("comicssansns", 10, "bold"), fill='White')
     str_ReceiverMailID = Entry(newWindow, width=50)
-    newWindow_canvas.create_window(170, 550, window=str_ReceiverMailID)
+    newWindow_canvas.create_window(170, 580, window=str_ReceiverMailID)
 
     #Send output mail button on new window
     Btn_SendMail = Button(newWindow, text='Send Output Via Mail >>>', command=SendMail)
-    Win_Btn_Submit = newWindow_canvas.create_window(95, 600, window=Btn_SendMail)
+    Win_Btn_Submit = newWindow_canvas.create_window(95, 630, window=Btn_SendMail)
 
     # Logic to display columns as a filter options.
 
@@ -664,18 +742,18 @@ if(bol_loginsuccess==True):
     app_root.maxsize(500, 500)
     app_root.minsize(500, 500)
 
-    app_root.title("Analytics Dashboard by T-systems")
+    app_root.title("SmarTAMM Analytics Solution by T-systems")
     app_root.configure(background="black")
 
     # Add backgroundImage
-    image1 = ImageTk.PhotoImage(Image.open("Images\\BgImg.PNG"))
+    image1 = ImageTk.PhotoImage(Image.open("Images\\.img\\BgImg.PNG"))
     app_canvas = Canvas(app_root, width=1080, height=2160)
     app_canvas.pack(fill="both", expand=True)
     app_canvas.create_image(0, 0, image=image1, anchor="nw")
 
     # build title and project name
     app_canvas.create_text(250, 35, text="SmarTAMM Analytics Solution", font=("comicssansns", 20, "bold"), fill='White')
-    LogoImg = ImageTk.PhotoImage(Image.open("Images\\TSysLogo.PNG"))
+    LogoImg = ImageTk.PhotoImage(Image.open("Images\\.img\\TSysLogo.PNG"))
     app_canvas.create_image(250, 100, image=LogoImg)
 
     # Add separator line
